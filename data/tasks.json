@@ -1,0 +1,41 @@
+[
+  {
+    "title": "Add current model display to sidebar",
+    "description": "Edit ~/mission-control/app/layout.jsx. Below the text Mission Control in the sidebar logo section, add a third line showing the current model. Read the model from a new API endpoint GET /api/status that returns {model: claude-sonnet-4, status: idle, currentTask: null, timer: 0}. Create the API route at ~/mission-control/app/api/status/route.js. For now, hardcode the model as claude-sonnet-4. The model text should be small, muted color, monospace font. Style: font-size 11px, color var(--text-muted).",
+    "status": "done",
+    "id": "1773696937714",
+    "created": "2026-03-16T21:35:37.714Z",
+    "priority": 3
+  },
+  {
+    "title": "Add agent status indicator to task board",
+    "description": "Edit ~/mission-control/app/tasks/page.jsx. Add a status card at the top of the page, above the kanban columns. The card shows Fletchers current status: Idle, Working, or Planning. Fetch status from GET /api/status. When Idle, show a grey dot and the word Idle. When Working, show a green dot, the word Working, and the title of the current task. When Planning, show a yellow dot, the word Planning, and a 2-3 sentence description of what is being planned. Style the card using the existing .card class with a flex row layout.",
+    "status": "done",
+    "id": "1773696952749",
+    "created": "2026-03-16T21:35:52.749Z",
+    "priority": 3
+  },
+  {
+    "title": "Add duration timer to status indicator",
+    "description": "Extend the status card from Task 2. Add a timer next to the status text showing how long Fletcher has been in the current state. The timer should display as HH:MM:SS format. The /api/status endpoint should return a startedAt timestamp. The frontend calculates elapsed time from startedAt to now and updates every second using setInterval. When status changes, the timer resets.",
+    "status": "done",
+    "id": "1773696967791",
+    "created": "2026-03-16T21:36:07.791Z",
+    "priority": 3
+  },
+  {
+    "title": "Add status update API endpoint",
+    "description": "Extend ~/mission-control/app/api/status/route.js to support POST requests. POST body: {status: working|planning|idle, currentTask: task title or null, planDescription: what is being planned or null}. The POST handler saves this to ~/mission-control/data/status.json with a startedAt timestamp set to the current time. GET reads from status.json. Add a helper function updateStatus() to lib/store.js that writes to status.json. After creating this, POST a test status: {status: working, currentTask: Building status display} to verify it works, then verify with GET /api/status.",
+    "status": "done",
+    "id": "1773696982834",
+    "created": "2026-03-16T21:36:22.834Z",
+    "priority": 3
+  },
+  {
+    "title": "Test Sawyer",
+    "description": "Verify deployment",
+    "status": "backlog",
+    "id": "1773761342973",
+    "created": "2026-03-17T15:29:02.973Z"
+  }
+]

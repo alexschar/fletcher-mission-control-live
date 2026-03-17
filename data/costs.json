@@ -1,0 +1,6 @@
+[
+  {"id":"1","provider":"OpenAI","model":"gpt-5-nano","tokens_in":4500,"tokens_out":1200,"cost_est":0.0285,"notes":"heartbeat check","timestamp":"2026-03-14T08:00:00Z"},
+  {"id":"2","provider":"OpenAI","model":"gpt-5-nano","tokens_in":3200,"tokens_out":800,"cost_est":0.0200,"notes":"morning brief","timestamp":"2026-03-14T07:00:00Z"},
+  {"id":"3","provider":"Anthropic","model":"claude-sonnet","tokens_in":12000,"tokens_out":8000,"cost_est":0.1280,"notes":"mission control build","timestamp":"2026-03-14T14:00:00Z"},
+  {"id":"4","provider":"OpenAI","model":"gpt-5-nano","tokens_in":2100,"tokens_out":600,"cost_est":0.0135,"notes":"telegram reply","timestamp":"2026-03-14T15:30:00Z"}
+]

@@ -1,0 +1,121 @@
+"use client";
+import { useState, useEffect } from "react";
+
+export default function CostsPage() {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/costs")
+      .then(r => r.json())
+      .then(d => { setData(d); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, []);
+
+  const dailyTotal = data?.dailyTotal ?? 0;
+  const monthlyTotal = data?.monthlyTotal ?? 0;
+  const daily = data?.daily ?? [];
+  const entries = data?.entries ?? [];
+
+  const alertLevel = monthlyTotal > 50 ? "red" : monthlyTotal > 20 ? "yellow" : "green";
+
+  // SVG chart
+  const maxY = Math.max(0.01, ...daily.map(d => d.total));
+  const chartPoints = daily.slice().reverse().map((d, i, arr) => {
+    const x = arr.length <= 1 ? 300 : (i / (arr.length - 1)) * 580 + 10;
+    const y = 140 - (d.total / maxY) * 120 + 10;
+    return `${x},${y}`;
+  }).join(" ");
+
+  return (
+    <div>
+      <div className="page-header">
+        <h1>Cost Tracker</h1>
+        <p>API spend monitoring and budget alerts</p>
+      </div>
+
+      <div className="grid-3">
+        <div className="card">
+          <div className="card-header">Today</div>
+          <div className={`card-value ${dailyTotal > 5 ? "red" : "green"}`}>
+            ${dailyTotal.toFixed(4)}
+          </div>
+        </div>
+        <div className="card">
+          <div className="card-header">This Month</div>
+          <div className={`card-value ${alertLevel}`}>
+            ${monthlyTotal.toFixed(2)}
+          </div>
+        </div>
+        <div className="card">
+          <div className="card-header">Budget Status</div>
+          <div style={{ marginTop: 8 }}>
+            <span className={`badge badge-${alertLevel}`}>
+              {alertLevel === "green" ? "On Track" : alertLevel === "yellow" ? "Watch" : "Over Budget"}
+            </span>
+            <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 8 }}>
+              Target: $30/month
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid-2">
+        <div className="card">
+          <div className="card-header">Spend Over Time</div>
+          <div className="chart-container">
+            {daily.length > 0 ? (
+              <svg width="100%" height="160" viewBox="0 0 600 160" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="fillGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.3"/>
+                    <stop offset="100%" stopColor="var(--accent)" stopOpacity="0"/>
+                  </linearGradient>
+                </defs>
+                <line x1="10" y1="150" x2="590" y2="150" stroke="var(--border)" strokeWidth="1"/>
+                {daily.length > 1 && (
+                  <>
+                    <polygon fill="url(#fillGrad)" points={`10,150 ${chartPoints} 590,150`}/>
+                    <polyline fill="none" stroke="var(--accent)" strokeWidth="2" points={chartPoints}/>
+                  </>
+                )}
+                {daily.slice().reverse().map((d, i, arr) => {
+                  const x = arr.length <= 1 ? 300 : (i / (arr.length - 1)) * 580 + 10;
+                  const y = 140 - (d.total / maxY) * 120 + 10;
+                  return <circle key={i} cx={x} cy={y} r="3" fill="var(--accent)"/>;
+                })}
+              </svg>
+            ) : (
+              <div className="empty">No cost data yet. Costs are logged as Fletcher makes API calls.</div>
+            )}
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="card-header">Recent API Calls</div>
+          {entries.length > 0 ? (
+            <div className="table-wrap">
+              <table>
+                <thead><tr><th>Time</th><th>Provider</th><th>Model</th><th>Cost</th></tr></thead>
+                <tbody>
+                  {entries.slice(0, 10).map((e, i) => (
+                    <tr key={i}>
+                      <td>{e.timestamp ? new Date(e.timestamp).toLocaleTimeString() : "-"}</td>
+                      <td>{e.provider || "-"}</td>
+                      <td style={{ fontFamily: "monospace", fontSize: 12 }}>{e.model || "-"}</td>
+                      <td>${(e.cost_est || 0).toFixed(6)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="empty">No entries yet</div>
+          )}
+        </div>
+      </div>
+
+      {loading && <div className="empty">Loading cost data...</div>}
+    </div>
+  );
+}
