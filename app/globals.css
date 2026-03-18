@@ -33,6 +33,20 @@ a:hover { text-decoration: underline; }
 .sidebar-link:hover { background: var(--bg-card-hover); color: var(--text-primary); text-decoration: none; }
 .sidebar-link.active { background: var(--accent); color: #fff; }
 .sidebar-link svg { width: 18px; height: 18px; opacity: 0.7; }
+.sidebar-notification-badge {
+  margin-left: auto;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--red);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
 .sidebar-status { margin-top: auto; padding: 16px 20px; border-top: 1px solid var(--border); }
 .sidebar-status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--green); margin-right: 8px; }
 .sidebar-status span { font-size: 12px; color: var(--text-secondary); }
@@ -116,6 +130,97 @@ tr:hover td { color: var(--text-primary); background: var(--bg-card-hover); }
 .schedule-name { font-weight: 600; font-size: 14px; }
 .schedule-cron { font-family: 'SF Mono', monospace; font-size: 12px; color: var(--text-muted); }
 .schedule-status { font-size: 12px; }
+
+/* Reports */
+.report-row {
+  position: relative;
+}
+
+.report-row-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.report-row-top h3 {
+  font-size: 16px;
+  margin-bottom: 4px;
+  color: var(--text-primary);
+}
+
+.report-row-top p {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.report-row-meta {
+  margin-top: 14px;
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.report-notification-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--red);
+  box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.16);
+  flex-shrink: 0;
+  margin-top: 6px;
+}
+
+.report-notification-dot--new {
+  background: var(--blue);
+  box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.16);
+}
+
+.report-notification-dot--audit {
+  background: var(--purple);
+  box-shadow: 0 0 0 3px rgba(175, 122, 255, 0.16);
+}
+
+.reports-list {
+  display: grid;
+  gap: 12px;
+}
+
+.reports-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.report-text {
+  white-space: pre-wrap;
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+
+.report-meta {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.stack-list {
+  display: grid;
+  gap: 12px;
+}
+
+.subtle-panel {
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.empty-card {
+  text-align: center;
+}
 
 @media (max-width: 1024px) {
   .grid-3, .grid-4 { grid-template-columns: repeat(2, 1fr); }

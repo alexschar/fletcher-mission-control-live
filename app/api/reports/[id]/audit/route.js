@@ -13,7 +13,11 @@ export async function GET(request, { params }) {
     const audit = await getAuditByReportId(id);
 
     if (actor === 'sawyer') {
-      return NextResponse.json(audit ? { suggestions_per_agent: audit.suggestions_per_agent } : null);
+      return NextResponse.json(audit ? {
+        suggestions_per_agent: audit.suggestions_per_agent,
+        created_at: audit.created_at,
+        updated_at: audit.updated_at,
+      } : null);
     }
 
     if (!canViewAudit(actor)) {

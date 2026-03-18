@@ -2,19 +2,19 @@
   "fletcher": {
     "name": "Fletcher",
     "id": "main",
-    "status": "offline",
-    "currentTask": null,
+    "status": "working",
+    "currentTask": "Policy review",
     "model": null,
-    "lastSeen": "2026-03-18T16:03:04.179Z",
+    "lastSeen": "2026-03-18T17:18:35.106Z",
     "role": "Policy authority, exception handler, weekly calibrator"
   },
   "sawyer": {
     "name": "Sawyer",
     "id": "sawyer",
     "status": "working",
-    "currentTask": "Fixing API consolidation and sidebar",
+    "currentTask": "System validation test",
     "model": "openai-codex/gpt-5.4",
-    "lastSeen": "2026-03-18T16:12:18.377Z",
+    "lastSeen": "2026-03-18T17:19:27.490Z",
     "role": "Daily operator, context observer, task dispatcher"
   },
   "celeste": {

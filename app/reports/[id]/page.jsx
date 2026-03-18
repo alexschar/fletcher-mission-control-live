@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import { getAuthHeaders, getCurrentActor, isAuthenticated, logout } from "../../../lib/api-client";
+import { markReportAuditViewed } from "../../../lib/notifications";
 import { useParams, useRouter } from "next/navigation";
 
 const FIELDS = [
@@ -79,6 +80,7 @@ export default function ReportDetailPage() {
         scope_assessment: data.scope_assessment || '',
         performance_assessment: data.performance_assessment || '',
       });
+      markReportAuditViewed({ id: params.id, audit: data });
     }
   }
 
@@ -95,43 +97,9 @@ export default function ReportDetailPage() {
 
   if (!report || !form) return <div className="empty">Loading report...</div>;
 
-  const isDraft = report.status === 'draft';
   const canViewAudit = actor === 'alex' || actor === 'fletcher';
   const canViewSuggestions = actor === 'sawyer';
   const canCreateAudit = actor === 'fletcher';
-
-  async function saveDraft() {
-    const res = await fetch(`/api/reports/${report.id}`, {
-      method: 'PUT',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(form),
-    });
-    const data = await res.json();
-    if (!res.ok) return alert(data.error || 'Failed to save report');
-    setReport(data);
-  }
-
-  async function submitReport() {
-    const res = await fetch(`/api/reports/${report.id}`, {
-      method: 'PUT',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({ action: 'submit' }),
-    });
-    const data = await res.json();
-    if (!res.ok) return alert(data.error || 'Failed to submit report');
-    setReport(data);
-    setForm({
-      title: data.title || '',
-      goal: data.goal || '',
-      summary: data.summary || '',
-      existing_state: data.existing_state || '',
-      implemented_changes: data.implemented_changes || '',
-      agent_assignments: data.agent_assignments || '',
-      escalations: data.escalations || '',
-      timeline: data.timeline || '',
-      memories_added: data.memories_added || '',
-    });
-  }
 
   async function createAddendum() {
     const res = await fetch(`/api/reports/${report.id}/addendums`, {
@@ -161,19 +129,16 @@ export default function ReportDetailPage() {
       <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16 }}>
         <div>
           <h1>{report.title}</h1>
-          <p>{report.status === 'submitted' ? 'Submitted report' : 'Draft report'} • Viewing as {actor}</p>
+          <p>Submitted report • Viewing as {actor}</p>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          {isDraft && <button className="btn" onClick={saveDraft}>Save Draft</button>}
-          {isDraft && <button className="btn btn-primary" onClick={submitReport}>Submit</button>}
-        </div>
+        <div style={{ display: 'flex', gap: 8 }} />
       </div>
 
       <div className="card" style={{ marginBottom: 16 }}>
         <div className="reports-form-grid">
           <div>
             <label className="field-label">Title</label>
-            {isDraft ? <input className="input" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /> : <div className="report-text">{report.title}</div>}
+            <div className="report-text">{report.title}</div>
           </div>
           <div>
             <label className="field-label">Status</label>
@@ -183,7 +148,7 @@ export default function ReportDetailPage() {
       </div>
 
       {FIELDS.map(([key, label]) => (
-        <Section key={key} label={label} value={form[key]} editable={isDraft} onChange={(value) => setForm({ ...form, [key]: value })} />
+        <Section key={key} label={label} value={form[key]} editable={false} onChange={(value) => setForm({ ...form, [key]: value })} />
       ))}
 
       <div className="card" style={{ marginBottom: 16 }}>

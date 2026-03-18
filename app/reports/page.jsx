@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { getAuthHeaders, isAuthenticated, logout, getCurrentActor } from "../../lib/api-client";
+import { getReportNotifications, hasNewAudit, isNewReport, markReportsListViewed } from "../../lib/notifications";
 import { useRouter } from "next/navigation";
 
 function statusTone(status) {
@@ -18,6 +19,7 @@ export default function ReportsPage() {
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState({ title: '', goal: '', summary: '' });
+  const [notifications, setNotifications] = useState({ newReportsCount: 0, reportsWithNewAudits: [], totalCount: 0 });
   const router = useRouter();
   const actor = useMemo(() => getCurrentActor(), []);
 
@@ -30,7 +32,10 @@ export default function ReportsPage() {
       return;
     }
     const data = await res.json();
-    setReports(Array.isArray(data) ? data : []);
+    const nextReports = Array.isArray(data) ? data : [];
+    setReports(nextReports);
+    setNotifications(getReportNotifications(nextReports));
+    markReportsListViewed(nextReports);
     setLoading(false);
   }
 
@@ -66,6 +71,13 @@ export default function ReportsPage() {
           <h1>Reports</h1>
           <p>Operational reports for Alex, Fletcher, and Sawyer.</p>
           <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 8 }}>Viewing as {actor.charAt(0).toUpperCase() + actor.slice(1)}</p>
+          {notifications.totalCount > 0 && (
+            <p style={{ fontSize: 12, color: 'var(--red)', marginTop: 8 }}>
+              {notifications.newReportsCount > 0 ? `${notifications.newReportsCount} new report${notifications.newReportsCount === 1 ? '' : 's'}` : null}
+              {notifications.newReportsCount > 0 && notifications.reportsWithNewAudits.length > 0 ? ' • ' : null}
+              {notifications.reportsWithNewAudits.length > 0 ? `${notifications.reportsWithNewAudits.length} audit update${notifications.reportsWithNewAudits.length === 1 ? '' : 's'}` : null}
+            </p>
+          )}
         </div>
         <button className="btn btn-primary" onClick={() => setCreating(v => !v)}>{creating ? 'Cancel' : '+ New Report'}</button>
       </div>
@@ -97,9 +109,13 @@ export default function ReportsPage() {
           {reports.map((report) => (
             <Link href={`/reports/${report.id}`} key={report.id} className="card report-row" style={{ display: 'block' }}>
               <div className="report-row-top">
-                <div>
-                  <h3>{report.title}</h3>
-                  <p>{report.goal || 'No goal recorded.'}</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div>
+                    <h3>{report.title}</h3>
+                    <p>{report.goal || 'No goal recorded.'}</p>
+                  </div>
+                  {isNewReport(report) && <span className="report-notification-dot report-notification-dot--new" aria-label="New report" title="New report" />}
+                  {hasNewAudit(report) && <span className="report-notification-dot report-notification-dot--audit" aria-label="New Fletcher audit" title="New Fletcher audit" />}
                 </div>
                 <span className={`badge ${statusTone(report.status)}`}>{report.status}</span>
               </div>

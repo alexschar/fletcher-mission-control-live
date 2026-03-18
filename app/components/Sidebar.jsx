@@ -1,14 +1,17 @@
 "use client";
 import { useState, useEffect } from "react";
-import { getCurrentActor, setCurrentActor } from "../../lib/api-client";
+import { getCurrentActor, setCurrentActor, getAuthHeaders } from "../../lib/api-client";
+import { getReportNotifications, subscribeToNotificationChanges } from "../../lib/notifications";
 
 export default function Sidebar() {
   const [agents, setAgents] = useState({});
   const [loading, setLoading] = useState(true);
   const [actor, setActor] = useState('sawyer');
+  const [reportNotificationCount, setReportNotificationCount] = useState(0);
 
   useEffect(() => {
     setActor(getCurrentActor());
+
     function fetchStatus() {
       fetch("/api/status")
         .then(r => r.json())
@@ -18,9 +21,30 @@ export default function Sidebar() {
         })
         .catch(() => setLoading(false));
     }
+
+    async function refreshReportNotifications() {
+      try {
+        const res = await fetch('/api/reports', { headers: getAuthHeaders() });
+        if (!res.ok) return;
+        const data = await res.json();
+        const notifications = getReportNotifications(Array.isArray(data) ? data : []);
+        setReportNotificationCount(notifications.totalCount);
+      } catch {
+        // ignore sidebar notification errors
+      }
+    }
+
     fetchStatus();
-    const interval = setInterval(fetchStatus, 15000);
-    return () => clearInterval(interval);
+    refreshReportNotifications();
+    const statusInterval = setInterval(fetchStatus, 15000);
+    const reportsInterval = setInterval(refreshReportNotifications, 15000);
+    const unsubscribe = subscribeToNotificationChanges(refreshReportNotifications);
+
+    return () => {
+      clearInterval(statusInterval);
+      clearInterval(reportsInterval);
+      unsubscribe();
+    };
   }, []);
 
   const activeAgent = Object.values(agents).find(a => a.status === 'working') 
@@ -52,7 +76,10 @@ export default function Sidebar() {
         <a href="/agents" className="sidebar-link">Agents</a>
         <a href="/costs" className="sidebar-link">Costs</a>
         <a href="/tasks" className="sidebar-link">Tasks</a>
-        <a href="/reports" className="sidebar-link">Reports</a>
+        <a href="/reports" className="sidebar-link">
+          Reports
+          {reportNotificationCount > 0 && <span className="sidebar-notification-badge">{reportNotificationCount}</span>}
+        </a>
         <a href="/schedule" className="sidebar-link">Schedule</a>
         <a href="/memory" className="sidebar-link">Memory</a>
         <a href="/health" className="sidebar-link">Health</a>
