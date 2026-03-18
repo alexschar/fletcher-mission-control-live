@@ -25,6 +25,10 @@ export default function Sidebar() {
         <span className="sidebar-model">{model}</span>
       </div>
       <div className="sidebar-nav">
+        <a href="/agents" className="sidebar-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Agents
+        </a>
         <a href="/costs" className="sidebar-link">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
           Costs
