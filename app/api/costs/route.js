@@ -6,27 +6,43 @@ function computeCostSummary(costs) {
   const today = new Date().toISOString().slice(0, 10);
   const month = today.slice(0, 7);
   
-  const dailyCosts = costs.filter(c => c.created_at?.startsWith(today));
-  const monthlyCosts = costs.filter(c => c.created_at?.startsWith(month));
+  // Handle both old format (timestamp, cost_est) and new format (created_at, calculated_cost)
+  const dailyCosts = costs.filter(c => {
+    const date = c.created_at || c.timestamp;
+    return date?.startsWith(today);
+  });
+  const monthlyCosts = costs.filter(c => {
+    const date = c.created_at || c.timestamp;
+    return date?.startsWith(month);
+  });
   
-  const dailyTotal = dailyCosts.reduce((s, c) => s + Number(c.calculated_cost || 0), 0);
-  const monthlyTotal = monthlyCosts.reduce((s, c) => s + Number(c.calculated_cost || 0), 0);
+  const dailyTotal = dailyCosts.reduce((s, c) => s + Number(c.calculated_cost || c.cost_est || 0), 0);
+  const monthlyTotal = monthlyCosts.reduce((s, c) => s + Number(c.calculated_cost || c.cost_est || 0), 0);
   
   // Group by date
   const byDate = {};
   costs.forEach(c => {
-    const d = c.created_at?.slice(0, 10) || 'unknown';
+    const d = (c.created_at || c.timestamp)?.slice(0, 10) || 'unknown';
     if (!byDate[d]) byDate[d] = { date: d, total: 0, count: 0 };
-    byDate[d].total += Number(c.calculated_cost || 0);
+    byDate[d].total += Number(c.calculated_cost || c.cost_est || 0);
     byDate[d].count++;
   });
+  
+  // Normalize entries for frontend
+  const normalizedEntries = costs.map(c => ({
+    ...c,
+    timestamp: c.created_at || c.timestamp,
+    cost_est: c.calculated_cost || c.cost_est || 0,
+    provider: c.provider || '-',
+    model: c.model || '-'
+  }));
   
   return {
     dailyTotal,
     monthlyTotal,
-    adjustedProjectedMonthlySpend: monthlyTotal, // For compatibility with existing code
+    adjustedProjectedMonthlySpend: monthlyTotal,
     daily: Object.values(byDate).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 30),
-    entries: costs.slice(-20).reverse()
+    entries: normalizedEntries.slice(-20).reverse()
   };
 }
 
@@ -50,12 +66,16 @@ export async function POST(request) {
   try {
     const body = await request.json();
     
+    // Store in the format the frontend expects
     await db.addCostEntry({
       agent: body.agent,
       model: body.model,
-      input_tokens: body.input_tokens || 0,
-      output_tokens: body.output_tokens || 0,
-      calculated_cost: body.cost_est || body.calculated_cost || 0
+      provider: body.provider,
+      tokens_in: body.tokens_in || body.input_tokens || 0,
+      tokens_out: body.tokens_out || body.output_tokens || 0,
+      cost_est: body.cost_est || body.calculated_cost || 0,
+      notes: body.notes,
+      timestamp: new Date().toISOString()
     });
     
     return NextResponse.json({ ok: true });
