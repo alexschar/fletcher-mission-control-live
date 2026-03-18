@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server';
 const db = require('../../../lib/database');
+const { authMiddleware } = require('../../../lib/auth');
 
 export async function GET(request) {
+  const authError = authMiddleware(request);
+  if (authError) return authError;
+  
   try {
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit') || '50', 10);
@@ -14,6 +18,9 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
+  const authError = authMiddleware(request);
+  if (authError) return authError;
+  
   try {
     const body = await request.json();
     

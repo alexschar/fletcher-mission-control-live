@@ -1,9 +1,13 @@
 import { NextResponse } from 'next/server';
 const db = require('../../../lib/database');
+const { authMiddleware } = require('../../../lib/auth');
 
 const DEFAULT_AGENT = 'celeste';
 
-export async function GET() {
+export async function GET(request) {
+  const authError = authMiddleware(request);
+  if (authError) return authError;
+  
   try {
     const statuses = await db.getAgentStatus();
     // If there are no statuses, return a default
@@ -23,6 +27,9 @@ export async function GET() {
 }
 
 export async function POST(request) {
+  const authError = authMiddleware(request);
+  if (authError) return authError;
+  
   try {
     const body = await request.json();
     

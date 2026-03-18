@@ -1,16 +1,23 @@
 "use client";
 import { useState, useEffect } from "react";
+import { getAuthHeaders, isAuthenticated, logout } from "../../lib/api-client";
+import { useRouter } from "next/navigation";
 
 export default function CostsPage() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
-    fetch("/api/costs")
-      .then(r => r.json())
+    if (!isAuthenticated()) {
+      router.push('/login');
+      return;
+    }
+    fetch("/api/costs", { headers: getAuthHeaders() })
+      .then(r => r.ok ? r.json() : (r.status === 401 ? (logout(), router.push('/login')) : {}))
       .then(d => { setData(d); setLoading(false); })
       .catch(() => setLoading(false));
-  }, []);
+  }, [router]);
 
   const dailyTotal = data?.dailyTotal ?? 0;
   const monthlyTotal = data?.monthlyTotal ?? 0;

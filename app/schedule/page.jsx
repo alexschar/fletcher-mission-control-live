@@ -1,23 +1,38 @@
 "use client";
 import { useState, useEffect } from "react";
+import { getAuthHeaders, isAuthenticated, logout } from "../../lib/api-client";
+import { useRouter } from "next/navigation";
 
 export default function SchedulePage() {
   const [items, setItems] = useState([]);
   const [adding, setAdding] = useState(false);
   const [form, setForm] = useState({ name: "", schedule: "", description: "" });
+  const router = useRouter();
 
   useEffect(() => {
-    fetch("/api/schedule").then(r => r.json()).then(setItems).catch(() => {});
-  }, []);
+    if (!isAuthenticated()) {
+      router.push('/login');
+      return;
+    }
+    fetch("/api/schedule", { headers: getAuthHeaders() })
+      .then(r => r.ok ? r.json() : (r.status === 401 ? (logout(), router.push('/login')) : []))
+      .then(setItems)
+      .catch(() => {});
+  }, [router]);
 
   async function addItem(e) {
     e.preventDefault();
     if (!form.name.trim()) return;
     const res = await fetch("/api/schedule", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: getAuthHeaders(),
       body: JSON.stringify({ ...form, status: "active", lastRun: null })
     });
+    if (res.status === 401) {
+      logout();
+      router.push('/login');
+      return;
+    }
     const updated = await res.json();
     setItems(updated);
     setForm({ name: "", schedule: "", description: "" });
@@ -27,9 +42,14 @@ export default function SchedulePage() {
   async function toggleItem(id, currentStatus) {
     const res = await fetch("/api/schedule", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: getAuthHeaders(),
       body: JSON.stringify({ action: "update", id, updates: { status: currentStatus === "active" ? "paused" : "active" } })
     });
+    if (res.status === 401) {
+      logout();
+      router.push('/login');
+      return;
+    }
     const updated = await res.json();
     setItems(updated);
   }

@@ -1,14 +1,22 @@
 "use client";
 import { useState, useEffect } from "react";
+import { getAuthHeaders, isAuthenticated, logout } from "../../lib/api-client";
+import { useRouter } from "next/navigation";
 
 export default function AgentsPage() {
   const [agents, setAgents] = useState({});
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState(null);
+  const router = useRouter();
 
   const fetchAgentData = async () => {
     try {
-      const response = await fetch("/api/agents");
+      const response = await fetch("/api/agents", { headers: getAuthHeaders() });
+      if (response.status === 401) {
+        logout();
+        router.push('/login');
+        return;
+      }
       const data = await response.json();
       setAgents(data);
       setLastUpdate(new Date().toISOString());
@@ -20,6 +28,10 @@ export default function AgentsPage() {
   };
 
   useEffect(() => {
+    if (!isAuthenticated()) {
+      router.push('/login');
+      return;
+    }
     fetchAgentData();
     
     // Poll every 30 seconds for cost-effective real-time updates

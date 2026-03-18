@@ -1,5 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
+import { getAuthHeaders, isAuthenticated, logout } from "../../lib/api-client";
+import { useRouter } from "next/navigation";
 
 const COLUMNS = [
   { id: "backlog", label: "Backlog", color: "var(--text-muted)" },
@@ -14,7 +16,10 @@ function StatusCard() {
 
   useEffect(() => {
     function fetchStatus() {
-      fetch("/api/status").then(r => r.json()).then(setStatus).catch(() => {});
+      fetch("/api/status", { headers: getAuthHeaders() })
+        .then(r => r.ok ? r.json() : (r.status === 401 ? (logout(), window.location.reload()) : {}))
+        .then(setStatus)
+        .catch(() => {});
     }
     fetchStatus();
     const interval = setInterval(fetchStatus, 10000);
@@ -71,19 +76,32 @@ export default function TasksPage() {
   const [newTitle, setNewTitle] = useState("");
   const [newDesc, setNewDesc] = useState("");
   const [adding, setAdding] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
-    fetch("/api/tasks").then(r => r.json()).then(setTasks).catch(() => {});
-  }, []);
+    if (!isAuthenticated()) {
+      router.push('/login');
+      return;
+    }
+    fetch("/api/tasks", { headers: getAuthHeaders() })
+      .then(r => r.ok ? r.json() : (r.status === 401 ? (logout(), router.push('/login')) : []))
+      .then(setTasks)
+      .catch(() => {});
+  }, [router]);
 
   async function addTask(e) {
     e.preventDefault();
     if (!newTitle.trim()) return;
     const res = await fetch("/api/tasks", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: getAuthHeaders(),
       body: JSON.stringify({ title: newTitle, description: newDesc, status: "backlog" })
     });
+    if (res.status === 401) {
+      logout();
+      router.push('/login');
+      return;
+    }
     const updated = await res.json();
     setTasks(updated);
     setNewTitle("");
@@ -94,9 +112,14 @@ export default function TasksPage() {
   async function moveTask(id, newStatus) {
     const res = await fetch("/api/tasks", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: getAuthHeaders(),
       body: JSON.stringify({ action: "update", id, updates: { status: newStatus } })
     });
+    if (res.status === 401) {
+      logout();
+      router.push('/login');
+      return;
+    }
     const updated = await res.json();
     setTasks(updated);
   }
@@ -104,9 +127,14 @@ export default function TasksPage() {
   async function removeTask(id) {
     const res = await fetch("/api/tasks", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: getAuthHeaders(),
       body: JSON.stringify({ action: "delete", id })
     });
+    if (res.status === 401) {
+      logout();
+      router.push('/login');
+      return;
+    }
     const updated = await res.json();
     setTasks(updated);
   }

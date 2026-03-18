@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 const db = require('../../../lib/database');
+const { authMiddleware } = require('../../../lib/auth');
 
 function computeCostSummary(costs) {
   const today = new Date().toISOString().slice(0, 10);
@@ -29,7 +30,10 @@ function computeCostSummary(costs) {
   };
 }
 
-export async function GET() {
+export async function GET(request) {
+  const authError = authMiddleware(request);
+  if (authError) return authError;
+  
   try {
     const costs = await db.getCosts();
     const summary = computeCostSummary(costs || []);
@@ -40,6 +44,9 @@ export async function GET() {
 }
 
 export async function POST(request) {
+  const authError = authMiddleware(request);
+  if (authError) return authError;
+  
   try {
     const body = await request.json();
     
