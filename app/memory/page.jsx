@@ -62,10 +62,16 @@ export default function MemoryPage() {
 
       {loading && <div className="empty">Loading memory files...</div>}
 
-      {!loading && filtered.length === 0 && (
+      {!loading && filtered.length === 0 && !search && (
         <div className="empty">
-          {search ? "No files match your search" : "No memory files found"}
+          <p>Memory files are not available in the cloud deployment.</p>
+          <p style={{ fontSize: 12, marginTop: 8, color: "var(--text-muted)" }}>
+            Memory files are stored locally on the Mac mini and accessible only in development.
+          </p>
         </div>
+      )}
+      {!loading && filtered.length === 0 && search && (
+        <div className="empty">No files match your search</div>
       )}
 
       {workspaceFiles.length > 0 && (

@@ -11,14 +11,14 @@ const COLUMNS = [
 ];
 
 function StatusCard() {
-  const [status, setStatus] = useState(null);
+  const [agents, setAgents] = useState({});
   const [elapsed, setElapsed] = useState("00:00:00");
 
   useEffect(() => {
     function fetchStatus() {
       fetch("/api/status", { headers: getAuthHeaders() })
         .then(r => r.ok ? r.json() : (r.status === 401 ? (logout(), window.location.reload()) : {}))
-        .then(setStatus)
+        .then(setAgents)
         .catch(() => {});
     }
     fetchStatus();
@@ -26,10 +26,15 @@ function StatusCard() {
     return () => clearInterval(interval);
   }, []);
 
+  // Find the active working agent
+  const activeAgent = Object.values(agents).find(a => a.status === 'working') 
+    || Object.values(agents).find(a => a.status !== 'offline')
+    || Object.values(agents)[0];
+
   useEffect(() => {
-    if (!status?.startedAt) return;
+    if (!activeAgent?.lastSeen) return;
     function updateTimer() {
-      const start = new Date(status.startedAt).getTime();
+      const start = new Date(activeAgent.lastSeen).getTime();
       const now = Date.now();
       const diff = Math.max(0, Math.floor((now - start) / 1000));
       const h = String(Math.floor(diff / 3600)).padStart(2, "0");
@@ -40,10 +45,11 @@ function StatusCard() {
     updateTimer();
     const timer = setInterval(updateTimer, 1000);
     return () => clearInterval(timer);
-  }, [status?.startedAt]);
+  }, [activeAgent?.lastSeen]);
 
-  const agentStatus = status?.status || "idle";
-  const dotColor = agentStatus === "working" ? "var(--green)" : agentStatus === "planning" ? "var(--yellow)" : "var(--text-muted)";
+  const agentStatus = activeAgent?.status || "idle";
+  const agentName = activeAgent?.name || "System";
+  const dotColor = agentStatus === "working" ? "#fd7e14" : agentStatus === "idle" ? "#238636" : "#8b949e";
   const dotClass = agentStatus === "working" ? "status-dot-pulse" : "";
   const label = agentStatus.charAt(0).toUpperCase() + agentStatus.slice(1);
 
@@ -53,15 +59,15 @@ function StatusCard() {
         <div className="status-card-left">
           <span className={"status-dot " + dotClass} style={{ background: dotColor }}></span>
           <div>
-            <div className="status-label">{label}</div>
-            {agentStatus === "working" && status?.currentTask && (
-              <div className="status-task">{status.currentTask}</div>
+            <div className="status-label">{agentName} — {label}</div>
+            {agentStatus === "working" && activeAgent?.currentTask && (
+              <div className="status-task">{activeAgent.currentTask}</div>
             )}
-            {agentStatus === "planning" && status?.planDescription && (
-              <div className="status-plan">{status.planDescription}</div>
+            {agentStatus === "idle" && activeAgent?.currentTask && (
+              <div className="status-task" style={{ color: "var(--text-muted)" }}>{activeAgent.currentTask}</div>
             )}
-            {agentStatus === "idle" && (
-              <div className="status-task" style={{ color: "var(--text-muted)" }}>No active task</div>
+            {(agentStatus === "offline" || !activeAgent) && (
+              <div className="status-task" style={{ color: "var(--text-muted)" }}>No active agent</div>
             )}
           </div>
         </div>
