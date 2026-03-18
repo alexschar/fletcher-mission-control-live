@@ -1,12 +1,38 @@
 import { NextResponse } from 'next/server';
-const { getStatus, updateStatus } = require('../../../lib/store');
+const { getAgentStatus, updateAgentStatus } = require('../../../lib/supabase');
+
+const DEFAULT_AGENT = 'celeste';
 
 export async function GET() {
-  return NextResponse.json(getStatus());
+  try {
+    const statuses = await getAgentStatus();
+    // If there are no statuses, return a default
+    if (!statuses || statuses.length === 0) {
+      return NextResponse.json({
+        status: 'idle',
+        currentTask: null,
+        agent: DEFAULT_AGENT
+      });
+    }
+    // Return the first status or the default agent's status
+    const defaultStatus = statuses.find(s => s.agent === DEFAULT_AGENT) || statuses[0];
+    return NextResponse.json(defaultStatus);
+  } catch (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }
 
 export async function POST(request) {
-  const body = await request.json();
-  const updated = updateStatus(body);
-  return NextResponse.json(updated);
+  try {
+    const body = await request.json();
+    
+    const updated = await updateAgentStatus(DEFAULT_AGENT, {
+      status: body.status,
+      current_task: body.currentTask
+    });
+    
+    return NextResponse.json(updated);
+  } catch (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }
