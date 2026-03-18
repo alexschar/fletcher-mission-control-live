@@ -382,3 +382,105 @@ tr:hover td { color: var(--text-primary); background: var(--bg-card-hover); }
   flex-wrap: wrap;
   gap: 4px;
 }
+/* Overrides Page */
+.overrides-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.override-card {
+  transition: border-color 0.15s;
+}
+
+.override-card:hover {
+  border-color: var(--accent-dim);
+}
+
+.override-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.override-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.override-timestamp {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.tier-badge {
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.tier-badge.tier-1 {
+  background: var(--green);
+}
+
+.tier-badge.tier-2 {
+  background: var(--yellow);
+}
+
+.tier-badge.tier-3 {
+  background: var(--red);
+}
+
+.risk-badge {
+  font-size: 11px;
+  color: var(--text-muted);
+  padding: 2px 8px;
+  background: var(--bg-input);
+  border-radius: 4px;
+}
+
+.outcome-badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  text-transform: capitalize;
+}
+
+.override-body {
+  padding-left: 0;
+}
+
+.override-description {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.override-details {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.empty-hint {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 8px;
+}
+
+.filter-group-btn {
+  display: flex;
+  align-items: flex-end;
+}
+
+.filter-group-btn .btn {
+  height: 38px;
+}
