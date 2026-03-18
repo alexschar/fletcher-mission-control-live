@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-const { getCosts, addCostEntry } = require('../../../lib/supabase');
+const db = require('../../../lib/database');
 
 function computeCostSummary(costs) {
   const today = new Date().toISOString().slice(0, 10);
@@ -31,7 +31,7 @@ function computeCostSummary(costs) {
 
 export async function GET() {
   try {
-    const costs = await getCosts();
+    const costs = await db.getCosts();
     const summary = computeCostSummary(costs || []);
     return NextResponse.json(summary);
   } catch (error) {
@@ -43,7 +43,7 @@ export async function POST(request) {
   try {
     const body = await request.json();
     
-    await addCostEntry({
+    await db.addCostEntry({
       agent: body.agent,
       model: body.model,
       input_tokens: body.input_tokens || 0,

@@ -1,5 +1,23 @@
 [
   {
+    "id": "1773846385754hispotdtf",
+    "title": "Test Fallback Task",
+    "description": "Testing the JSON fallback",
+    "status": "in_progress",
+    "priority": "medium",
+    "created_at": "2026-03-18T15:06:25.754Z",
+    "updated_at": "2026-03-18T15:06:25.754Z"
+  },
+  {
+    "id": "1773846172154pkea21ln2",
+    "title": "Test JSON Fallback",
+    "description": "Testing the new fallback system",
+    "status": "backlog",
+    "priority": "medium",
+    "created_at": "2026-03-18T15:02:52.154Z",
+    "updated_at": "2026-03-18T15:02:52.154Z"
+  },
+  {
     "title": "Add current model display to sidebar",
     "description": "Edit ~/mission-control/app/layout.jsx. Below the text Mission Control in the sidebar logo section, add a third line showing the current model. Read the model from a new API endpoint GET /api/status that returns {model: claude-sonnet-4, status: idle, currentTask: null, timer: 0}. Create the API route at ~/mission-control/app/api/status/route.js. For now, hardcode the model as claude-sonnet-4. The model text should be small, muted color, monospace font. Style: font-size 11px, color var(--text-muted).",
     "status": "done",
