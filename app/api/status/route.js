@@ -7,7 +7,7 @@ export async function GET(request) {
   if (authError) return authError;
   
   try {
-    const statuses = getAllAgentStatuses();
+    const statuses = await getAllAgentStatuses();
     return NextResponse.json(statuses);
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -26,7 +26,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Agent name required' }, { status: 400 });
     }
     
-    const updated = updateAgentStatus(agent, updates);
+    const updated = await updateAgentStatus(agent, updates);
     return NextResponse.json(updated);
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
