@@ -1,26 +1,14 @@
 import { NextResponse } from 'next/server';
-const db = require('../../../lib/database');
+const { getAllAgentStatuses, updateAgentStatus } = require('../../../lib/store');
 const { authMiddleware } = require('../../../lib/auth');
-
-const DEFAULT_AGENT = 'celeste';
 
 export async function GET(request) {
   const authError = authMiddleware(request);
   if (authError) return authError;
   
   try {
-    const statuses = await db.getAgentStatus();
-    // If there are no statuses, return a default
-    if (!statuses || statuses.length === 0) {
-      return NextResponse.json({
-        status: 'idle',
-        currentTask: null,
-        agent: DEFAULT_AGENT
-      });
-    }
-    // Return the first status or the default agent's status
-    const defaultStatus = statuses.find(s => s.agent === DEFAULT_AGENT) || statuses[0];
-    return NextResponse.json(defaultStatus);
+    const statuses = getAllAgentStatuses();
+    return NextResponse.json(statuses);
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -32,12 +20,13 @@ export async function POST(request) {
   
   try {
     const body = await request.json();
+    const { agent, ...updates } = body;
     
-    const updated = await db.updateAgentStatus(DEFAULT_AGENT, {
-      status: body.status,
-      current_task: body.currentTask
-    });
+    if (!agent) {
+      return NextResponse.json({ error: 'Agent name required' }, { status: 400 });
+    }
     
+    const updated = updateAgentStatus(agent, updates);
     return NextResponse.json(updated);
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

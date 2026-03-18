@@ -2,20 +2,37 @@
 import { useState, useEffect } from "react";
 
 export default function Sidebar() {
-  const [status, setStatus] = useState(null);
+  const [agents, setAgents] = useState({});
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     function fetchStatus() {
-      fetch("/api/status").then(r => r.json()).then(setStatus).catch(() => {});
+      fetch("/api/status")
+        .then(r => r.json())
+        .then(data => {
+          setAgents(data);
+          setLoading(false);
+        })
+        .catch(() => setLoading(false));
     }
     fetchStatus();
     const interval = setInterval(fetchStatus, 15000);
     return () => clearInterval(interval);
   }, []);
 
-  const model = status?.model || "loading...";
-  const agentStatus = status?.status || "idle";
-  const dotColor = agentStatus === "working" ? "var(--green)" : agentStatus === "planning" ? "var(--yellow)" : "var(--text-muted)";
+  // Find the currently working agent, or any online agent
+  const activeAgent = Object.values(agents).find(a => a.status === 'working') 
+    || Object.values(agents).find(a => a.status !== 'offline')
+    || Object.values(agents)[0];
+
+  const model = activeAgent?.model || (loading ? "..." : "—");
+  const agentName = activeAgent?.name || "System";
+  const agentStatus = activeAgent?.status || "idle";
+  const dotColor = agentStatus === "working" ? "#fd7e14" : agentStatus === "idle" ? "#238636" : "#8b949e";
+
+  // Count working agents
+  const workingCount = Object.values(agents).filter(a => a.status === 'working').length;
+  const totalCount = Object.keys(agents).length;
 
   return (
     <nav className="sidebar">
@@ -56,7 +73,12 @@ export default function Sidebar() {
       </div>
       <div className="sidebar-status">
         <span className="sidebar-status-dot" style={{ background: dotColor }}></span>
-        <span>Fletcher {agentStatus.charAt(0).toUpperCase() + agentStatus.slice(1)}</span>
+        <span>{agentName} {agentStatus.charAt(0).toUpperCase() + agentStatus.slice(1)}</span>
+        {totalCount > 0 && (
+          <span style={{ marginLeft: 'auto', fontSize: '11px', color: 'var(--text-muted)' }}>
+            {workingCount}/{totalCount} active
+          </span>
+        )}
       </div>
     </nav>
   );
