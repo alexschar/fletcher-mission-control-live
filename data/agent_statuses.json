@@ -2,28 +2,28 @@
   "fletcher": {
     "name": "Fletcher",
     "id": "main",
-    "status": "working",
-    "currentTask": "Reviewing agent status implementation",
-    "model": "claude-sonnet-4",
-    "lastSeen": "2026-03-17T21:35:15.146Z",
+    "status": "offline",
+    "currentTask": null,
+    "model": null,
+    "lastSeen": "2026-03-18T16:03:04.179Z",
     "role": "Policy authority, exception handler, weekly calibrator"
   },
   "sawyer": {
     "name": "Sawyer",
     "id": "sawyer",
     "status": "working",
-    "currentTask": "Implementing agent status dashboard",
-    "model": "claude-sonnet-4",
-    "lastSeen": "2026-03-17T21:34:45.175Z",
+    "currentTask": "Fixing agent status accuracy bug",
+    "model": "openai-codex/gpt-5.4",
+    "lastSeen": "2026-03-18T16:02:53.178Z",
     "role": "Daily operator, context observer, task dispatcher"
   },
   "celeste": {
     "name": "Celeste",
     "id": "celeste",
-    "status": "working",
-    "currentTask": "Implementing new API endpoints",
-    "model": "claude-sonnet-4",
-    "lastSeen": "2026-03-17T21:35:11.023Z",
+    "status": "offline",
+    "currentTask": null,
+    "model": null,
+    "lastSeen": "2026-03-18T16:03:04.187Z",
     "role": "Builder, coder, implementation specialist"
   }
 }
