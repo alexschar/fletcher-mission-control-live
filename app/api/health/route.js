@@ -1,36 +1,14 @@
 import { NextResponse } from 'next/server';
-const fs = require('fs');
-const path = require('path');
 const { authMiddleware } = require('../../../lib/auth');
+const { getHealthAudits, addHealthAudit } = require('../../../lib/supabase');
 
-const DATA_FILE = path.join(process.cwd(), 'data', 'health_audits.json');
 const AGENTS = ['sawyer', 'fletcher', 'celeste'];
-
-function ensureDataFile() {
-  const dir = path.dirname(DATA_FILE);
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  if (!fs.existsSync(DATA_FILE)) fs.writeFileSync(DATA_FILE, JSON.stringify({ audits: [] }, null, 2));
-}
-
-function readData() {
-  ensureDataFile();
-  try {
-    return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
-  } catch {
-    return { audits: [] };
-  }
-}
-
-function writeData(data) {
-  ensureDataFile();
-  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
-}
 
 function buildChecksSummary(checks) {
   const parts = [];
-  if (typeof checks.recentActivityMinutes === 'number') parts.push(`activity ${checks.recentActivityMinutes}m ago`);
-  if (checks.visibility) parts.push(checks.visibility);
-  if (checks.note) parts.push(checks.note);
+  if (typeof checks?.recentActivityMinutes === 'number') parts.push(`activity ${checks.recentActivityMinutes}m ago`);
+  if (checks?.visibility) parts.push(checks.visibility);
+  if (checks?.note) parts.push(checks.note);
   return parts.join(' · ') || 'Standard health checks';
 }
 
@@ -38,30 +16,47 @@ function rankAudit(agent) {
   const now = new Date().toISOString();
 
   if (agent === 'sawyer') {
+    const checks = {
+      recentActivityMinutes: 0,
+      visibility: 'direct session active',
+      note: 'operator online'
+    };
+
     return {
       agent,
       status: 'green',
       message: 'Sawyer is active and responding normally.',
       timestamp: now,
-      checks: {
-        recentActivityMinutes: 0,
-        visibility: 'direct session active',
-        note: 'operator online'
-      },
-      checksSummary: 'activity 0m ago · direct session active · operator online'
+      checks,
+      checksSummary: buildChecksSummary(checks)
     };
   }
+
+  const checks = {
+    visibility: 'indirect visibility only',
+    note: 'awaiting explicit agent heartbeat'
+  };
 
   return {
     agent,
     status: 'yellow',
     message: `${agent.charAt(0).toUpperCase() + agent.slice(1)} is not directly visible from this session; monitoring via Mission Control only.`,
     timestamp: now,
-    checks: {
-      visibility: 'indirect visibility only',
-      note: 'awaiting explicit agent heartbeat'
-    },
-    checksSummary: 'indirect visibility only · awaiting explicit agent heartbeat'
+    checks,
+    checksSummary: buildChecksSummary(checks)
+  };
+}
+
+function normalizeAudit(audit) {
+  if (!audit) return audit;
+  const checks = audit.checks || {};
+  return {
+    agent: audit.agent,
+    status: audit.status,
+    message: audit.message,
+    timestamp: audit.timestamp,
+    checks,
+    checksSummary: audit.checksSummary || audit.checks_summary || buildChecksSummary(checks)
   };
 }
 
@@ -71,6 +66,7 @@ function shapeResponse(audits) {
       .filter(a => a.agent === agent)
       .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
       .slice(0, 10);
+
     acc[agent] = {
       current: history[0] || null,
       history
@@ -79,17 +75,15 @@ function shapeResponse(audits) {
   }, {});
 }
 
-function runAudit(targetAgent = null) {
-  const data = readData();
+async function runAudit(targetAgent = null) {
   const agentsToAudit = targetAgent ? [targetAgent] : AGENTS;
 
   for (const agent of agentsToAudit) {
-    data.audits.unshift(rankAudit(agent));
+    await addHealthAudit(rankAudit(agent));
   }
 
-  data.audits = data.audits.slice(0, 200);
-  writeData(data);
-  return shapeResponse(data.audits);
+  const audits = await getHealthAudits(200);
+  return shapeResponse(audits.map(normalizeAudit));
 }
 
 function latestAuditForAgent(audits, agent) {
@@ -112,11 +106,11 @@ export async function GET(request) {
   if (authError) return authError;
 
   try {
-    const data = readData();
-    if (!data.audits.length || needsHourlyAudit(data.audits)) {
-      return NextResponse.json(runAudit());
+    const audits = (await getHealthAudits(200)).map(normalizeAudit);
+    if (!audits.length || needsHourlyAudit(audits)) {
+      return NextResponse.json(await runAudit());
     }
-    return NextResponse.json(shapeResponse(data.audits));
+    return NextResponse.json(shapeResponse(audits));
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -132,7 +126,7 @@ export async function POST(request) {
     if (agent && !AGENTS.includes(agent)) {
       return NextResponse.json({ error: 'Invalid agent' }, { status: 400 });
     }
-    return NextResponse.json(runAudit(agent || null));
+    return NextResponse.json(await runAudit(agent || null));
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
