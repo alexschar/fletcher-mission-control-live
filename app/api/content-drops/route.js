@@ -55,6 +55,8 @@ export async function GET(request) {
       return NextResponse.json({ error: `platform must be one of: ${ALLOWED_PLATFORMS.join(', ')}` }, { status: 400 });
     }
 
+    const search = searchParams.get('search')?.trim() || undefined;
+
     const processed = parseProcessed(searchParams.get('processed'));
     if (processed === null) {
       return NextResponse.json({ error: 'processed must be true or false' }, { status: 400 });
@@ -65,7 +67,7 @@ export async function GET(request) {
       return NextResponse.json({ error: 'since must be a valid ISO date string' }, { status: 400 });
     }
 
-    const drops = await getContentDrops({ limit, platform, processed, since });
+    const drops = await getContentDrops({ limit, platform, processed, since, search });
     return NextResponse.json(drops);
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: error.status || 500 });
