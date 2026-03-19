@@ -15,7 +15,12 @@ export async function GET(request) {
       const files = await getMemoryFiles(agent);
       return NextResponse.json(files);
     } catch (error) {
-      if (error.code !== '42P01' && !error.message?.includes('does not exist')) {
+      const tableMissing = error.code === '42P01'
+        || error.code === 'PGRST205'
+        || error.message?.includes('does not exist')
+        || error.message?.includes('schema cache');
+
+      if (!tableMissing) {
         throw error;
       }
     }
