@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { getAuthHeaders, isAuthenticated, logout } from "../../lib/api-client";
 import { useRouter } from "next/navigation";
+import { ConversationsListSkeleton, FiltersSkeleton, StatusCardSkeleton } from "../components/Skeleton";
 
 function StatusCard() {
   const [agents, setAgents] = useState({});
@@ -19,8 +20,8 @@ function StatusCard() {
     return () => clearInterval(interval);
   }, []);
 
-  const activeAgent = Object.values(agents).find(a => a.status === 'working') 
-    || Object.values(agents).find(a => a.status !== 'offline')
+  const activeAgent = Object.values(agents).find(a => a.status === "working")
+    || Object.values(agents).find(a => a.status !== "offline")
     || Object.values(agents)[0];
 
   useEffect(() => {
@@ -80,9 +81,77 @@ function formatDate(dateStr) {
 }
 
 function TopicTag({ topic }) {
-  return (
-    <span className="topic-tag">{topic}</span>
-  );
+  return <span className="topic-tag">{topic}</span>;
+}
+
+function getAgentColor(agent) {
+  switch (String(agent || "").toLowerCase()) {
+    case "sawyer": return "var(--accent)";
+    case "celeste": return "var(--purple)";
+    case "fletcher": return "var(--green)";
+    default: return "var(--text-muted)";
+  }
+}
+
+function normalizeAgentList(conversation) {
+  const fromFields = [
+    conversation.agents,
+    conversation.agents_involved,
+    conversation.agent_ids,
+    conversation.participants,
+    conversation.participant_agents
+  ];
+
+  const collected = fromFields.flatMap((value) => {
+    if (Array.isArray(value)) return value;
+    if (typeof value === "string") {
+      return value.split(",").map(part => part.trim()).filter(Boolean);
+    }
+    return [];
+  });
+
+  if (conversation.agent) collected.unshift(conversation.agent);
+
+  return Array.from(new Set(
+    collected
+      .map(value => String(value || "").trim().toLowerCase())
+      .filter(Boolean)
+  ));
+}
+
+function getMessageCount(conversation) {
+  if (typeof conversation.message_count === "number") return conversation.message_count;
+  if (typeof conversation.messages_count === "number") return conversation.messages_count;
+  if (typeof conversation.count === "number") return conversation.count;
+  if (Array.isArray(conversation.messages)) return conversation.messages.length;
+  return null;
+}
+
+function getPreviewText(conversation) {
+  const preview = [
+    conversation.preview,
+    conversation.summary_preview,
+    conversation.content_preview,
+    conversation.excerpt,
+    conversation.latest_message,
+    conversation.last_message,
+    conversation.summary
+  ].find(value => typeof value === "string" && value.trim());
+
+  return preview || "No summary available.";
+}
+
+function getSecondaryText(conversation) {
+  const detail = [
+    conversation.details,
+    conversation.notes,
+    conversation.context,
+    conversation.description
+  ].find(value => typeof value === "string" && value.trim());
+
+  if (!detail) return "";
+  if (detail === conversation.summary) return "";
+  return detail;
 }
 
 export default function ConversationsPage() {
@@ -90,13 +159,13 @@ export default function ConversationsPage() {
   const [allTopics, setAllTopics] = useState([]);
   const [agentFilter, setAgentFilter] = useState("all");
   const [topicFilter, setTopicFilter] = useState("");
-  const [hours, setHours] = useState(168); // Default: 7 days
+  const [hours, setHours] = useState(168);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
     if (!isAuthenticated()) {
-      router.push('/login');
+      router.push("/login");
       return;
     }
     fetchConversations();
@@ -108,13 +177,12 @@ export default function ConversationsPage() {
       const res = await fetch(`/api/conversations?hours=${hours}`, { headers: getAuthHeaders() });
       if (res.status === 401) {
         logout();
-        router.push('/login');
+        router.push("/login");
         return;
       }
       const data = await res.json();
       setConversations(data || []);
-      
-      // Extract all unique topics
+
       const topics = new Set();
       (data || []).forEach(c => {
         if (c.topics && Array.isArray(c.topics)) {
@@ -129,11 +197,11 @@ export default function ConversationsPage() {
     }
   }
 
-  // Filter conversations
   const filteredConversations = conversations.filter(c => {
-    if (agentFilter !== "all" && c.agent !== agentFilter) return false;
+    const agentsInConversation = normalizeAgentList(c);
+    if (agentFilter !== "all" && !agentsInConversation.includes(agentFilter)) return false;
     if (topicFilter) {
-      const hasTopic = c.topics && c.topics.some(t => 
+      const hasTopic = c.topics && c.topics.some(t =>
         t.toLowerCase().includes(topicFilter.toLowerCase())
       );
       if (!hasTopic) return false;
@@ -141,35 +209,24 @@ export default function ConversationsPage() {
     return true;
   });
 
-  // Get agent color
-  function getAgentColor(agent) {
-    switch (agent) {
-      case "sawyer": return "var(--accent)";
-      case "celeste": return "var(--purple)";
-      case "fletcher": return "var(--green)";
-      default: return "var(--text-muted)";
-    }
-  }
-
   return (
     <div>
       <div className="page-header">
         <div>
           <h1>Conversations</h1>
-          <p>Agent conversation summaries</p>
+          <p>Quick-glance agent conversation log with inline summaries, participants, and message volume.</p>
         </div>
       </div>
 
       <StatusCard />
 
-      {/* Filters */}
       <div className="card filters-card">
         <div className="filters-row">
           <div className="filter-group">
             <label>Agent</label>
-            <select 
-              className="select" 
-              value={agentFilter} 
+            <select
+              className="select"
+              value={agentFilter}
               onChange={(e) => setAgentFilter(e.target.value)}
             >
               {AGENTS.map(a => (
@@ -179,13 +236,13 @@ export default function ConversationsPage() {
               ))}
             </select>
           </div>
-          
+
           <div className="filter-group">
             <label>Topic</label>
-            <input 
-              className="input" 
-              type="text" 
-              placeholder="Search topics..." 
+            <input
+              className="input"
+              type="text"
+              placeholder="Search topics..."
               value={topicFilter}
               onChange={(e) => setTopicFilter(e.target.value)}
             />
@@ -193,9 +250,9 @@ export default function ConversationsPage() {
 
           <div className="filter-group">
             <label>Time Range</label>
-            <select 
-              className="select" 
-              value={hours} 
+            <select
+              className="select"
+              value={hours}
               onChange={(e) => setHours(Number(e.target.value))}
             >
               <option value={24}>Last 24 hours</option>
@@ -206,14 +263,13 @@ export default function ConversationsPage() {
           </div>
         </div>
 
-        {/* Topic cloud */}
         {allTopics.length > 0 && (
           <div className="topic-cloud">
             {allTopics.map(topic => (
               <button
                 key={topic}
-                className={`topic-btn ${topicFilter.toLowerCase() === topic.toLowerCase() ? 'active' : ''}`}
-                onClick={() => setTopicFilter(topicFilter === topic ? '' : topic)}
+                className={`topic-btn ${topicFilter.toLowerCase() === topic.toLowerCase() ? "active" : ""}`}
+                onClick={() => setTopicFilter(topicFilter === topic ? "" : topic)}
               >
                 {topic}
               </button>
@@ -222,14 +278,12 @@ export default function ConversationsPage() {
         )}
       </div>
 
-      {/* Results count */}
       <div className="results-count">
-        {filteredConversations.length} conversation{filteredConversations.length !== 1 ? 's' : ''}
-        {agentFilter !== "all" && ` from ${agentFilter}`}
+        {filteredConversations.length} conversation{filteredConversations.length !== 1 ? "s" : ""}
+        {agentFilter !== "all" && ` involving ${agentFilter}`}
         {topicFilter && ` matching "${topicFilter}"`}
       </div>
 
-      {/* Conversations list */}
       {loading ? (
         <div className="loading">Loading conversations...</div>
       ) : filteredConversations.length === 0 ? (
@@ -238,28 +292,82 @@ export default function ConversationsPage() {
         </div>
       ) : (
         <div className="conversations-list">
-          {filteredConversations.map(c => (
-            <div key={c.id} className="card conversation-card">
-              <div className="conversation-header">
-                <span 
-                  className="agent-badge" 
-                  style={{ background: getAgentColor(c.agent) }}
-                >
-                  {c.agent}
-                </span>
-                <span className="conversation-time">{formatDate(c.created_at)}</span>
-                {c.source && <span className="conversation-source">{c.source}</span>}
-              </div>
-              <p className="conversation-summary">{c.summary}</p>
-              {c.topics && c.topics.length > 0 && (
-                <div className="conversation-topics">
-                  {c.topics.map(topic => (
-                    <TopicTag key={topic} topic={topic} />
-                  ))}
+          {filteredConversations.map(c => {
+            const agentsInConversation = normalizeAgentList(c);
+            const messageCount = getMessageCount(c);
+            const preview = getPreviewText(c);
+            const secondary = getSecondaryText(c);
+
+            return (
+              <div key={c.id} className="card conversation-card conversation-card-expanded">
+                <div className="conversation-header conversation-header-expanded">
+                  <div className="conversation-header-left">
+                    <span
+                      className="agent-badge"
+                      style={{ background: getAgentColor(c.agent || agentsInConversation[0]) }}
+                    >
+                      {c.agent || agentsInConversation[0] || "conversation"}
+                    </span>
+                    {c.source && <span className="conversation-source">{c.source}</span>}
+                    <span className="conversation-time">{formatDate(c.created_at)}</span>
+                  </div>
+
+                  <div className="conversation-meta-grid">
+                    <div className="conversation-stat-card">
+                      <span className="conversation-stat-label">Messages</span>
+                      <strong className="conversation-stat-value">{messageCount ?? "—"}</strong>
+                    </div>
+                    <div className="conversation-stat-card">
+                      <span className="conversation-stat-label">Agents</span>
+                      <strong className="conversation-stat-value">{agentsInConversation.length || 1}</strong>
+                    </div>
+                  </div>
                 </div>
-              )}
-            </div>
-          ))}
+
+                {agentsInConversation.length > 0 && (
+                  <div className="conversation-agents-row">
+                    <span className="conversation-section-label">Agents involved</span>
+                    <div className="conversation-agents-list">
+                      {agentsInConversation.map(agent => (
+                        <span
+                          key={agent}
+                          className="conversation-agent-pill"
+                          style={{ borderColor: getAgentColor(agent) }}
+                        >
+                          <span
+                            className="conversation-agent-dot"
+                            style={{ background: getAgentColor(agent) }}
+                          ></span>
+                          {agent}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="conversation-body">
+                  <div>
+                    <div className="conversation-section-label">Summary</div>
+                    <p className="conversation-summary conversation-preview">{preview}</p>
+                  </div>
+                  {secondary && (
+                    <div>
+                      <div className="conversation-section-label">Additional context</div>
+                      <p className="conversation-summary conversation-secondary">{secondary}</p>
+                    </div>
+                  )}
+                </div>
+
+                {c.topics && c.topics.length > 0 && (
+                  <div className="conversation-topics">
+                    {c.topics.map(topic => (
+                      <TopicTag key={topic} topic={topic} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

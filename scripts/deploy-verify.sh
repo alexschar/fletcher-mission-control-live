@@ -2,7 +2,7 @@
 set -euo pipefail
 
 if [[ $# -lt 1 ]]; then
-  echo "Usage: bash scripts/deploy-verify.sh /|/agents|/tasks|/schedule|/reports|/app"
+  echo "Usage: bash scripts/deploy-verify.sh /|/agents|/tasks|/schedule|/reports|/conversations|/app"
   exit 1
 fi
 
@@ -165,6 +165,11 @@ for PAGE in "$@"; do
       ;;
     /reports)
       verify_reports
+      ;;
+    /conversations)
+      echo "── Verifying /conversations ──"
+      assert_page_ok "$BASE_URL/conversations"
+      echo "✅ Conversations page verified"
       ;;
     /app|/)
       verify_error_boundaries
