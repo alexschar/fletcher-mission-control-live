@@ -5,17 +5,7 @@ import { useRouter } from "next/navigation";
 import ContentList from "../../components/content/ContentList";
 import ContentDetail from "../../components/content/ContentDetail";
 import AddContentModal from "../../components/content/AddContentModal";
-import { getAuthToken, isAuthenticated, logout } from "../../lib/api-client";
-
-const DEFAULT_TOKEN = "mc_test_token_12345";
-
-function getHeaders() {
-  const token = typeof window === "undefined" ? DEFAULT_TOKEN : (getAuthToken() || DEFAULT_TOKEN);
-  return {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`,
-  };
-}
+import { getAuthHeaders, getAuthToken, isAuthenticated, logout } from "../../lib/api-client";
 
 export default function ContentPage() {
   const router = useRouter();
@@ -30,10 +20,11 @@ export default function ContentPage() {
   const [showAddModal, setShowAddModal] = useState(false);
 
   useEffect(() => {
-    if (!isAuthenticated() && typeof window !== "undefined") {
-      localStorage.setItem("mc_auth_token", DEFAULT_TOKEN);
+    if (!isAuthenticated()) {
+      router.push('/login');
+      return;
     }
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     fetchContent();
@@ -57,7 +48,7 @@ export default function ContentPage() {
 
     try {
       const response = await fetch(`/api/content-drops?${params.toString()}`, {
-        headers: getHeaders(),
+        headers: getAuthHeaders(),
       });
 
       if (response.status === 401) {
@@ -92,7 +83,7 @@ export default function ContentPage() {
   async function patchContentDrop(id, payload) {
     const response = await fetch(`/api/content-drops/${id}`, {
       method: "PATCH",
-      headers: getHeaders(),
+      headers: getAuthHeaders(),
       body: JSON.stringify(payload),
     });
 
@@ -133,7 +124,7 @@ export default function ContentPage() {
   async function handleAddContent(payload) {
     const response = await fetch("/api/content-drops", {
       method: "POST",
-      headers: getHeaders(),
+      headers: getAuthHeaders(),
       body: JSON.stringify(payload),
     });
 
