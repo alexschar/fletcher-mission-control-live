@@ -103,7 +103,7 @@ verify_schedule() {
   echo "── Verifying /schedule ──"
   assert_page_ok "$BASE_URL/schedule"
   local before created id paused resumed name
-  name="Verify job $SHORT_HASH $(date +%s)"
+  name="verify-job-$SHORT_HASH-$(date +%s)"
   before="$(api "$BASE_URL/api/schedule")"
   assert_json_array "$before"
   created="$(api -X POST "$BASE_URL/api/schedule" -H 'Content-Type: application/json' --data '{"name":"'$name'","schedule":"Every 15m","description":"deploy-verify","status":"active","lastRun":null}')"
