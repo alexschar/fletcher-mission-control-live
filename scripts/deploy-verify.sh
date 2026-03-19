@@ -132,7 +132,7 @@ verify_reports() {
 
 verify_error_boundaries() {
   echo "── Verifying app-wide error boundary coverage ──"
-  assert_page_ok "$BASE_URL/"
+  assert_page_ok "$BASE_URL/agents"
   assert_page_ok "$BASE_URL/tasks"
   assert_page_ok "$BASE_URL/schedule"
   assert_page_ok "$BASE_URL/reports"
