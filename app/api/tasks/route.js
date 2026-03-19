@@ -22,17 +22,17 @@ export async function POST(request) {
     const body = await request.json();
     
     if (body.action === 'update') {
-      await db.updateTask(body.id, body.updates);
-      return NextResponse.json(await db.getTasks());
+      const updatedTasks = await db.updateTask(body.id, body.updates);
+      return NextResponse.json(updatedTasks);
     }
     
     if (body.action === 'delete') {
-      await db.deleteTask(body.id);
-      return NextResponse.json(await db.getTasks());
+      const remainingTasks = await db.deleteTask(body.id);
+      return NextResponse.json(remainingTasks);
     }
     
     // Default: create a new task
-    await db.createTask({
+    const createdTasks = await db.createTask({
       title: body.title,
       description: body.description,
       status: body.status || 'backlog',
@@ -41,7 +41,7 @@ export async function POST(request) {
       priority: body.priority || 'medium'
     });
     
-    return NextResponse.json(await db.getTasks(), { status: 201 });
+    return NextResponse.json(createdTasks, { status: 201 });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
