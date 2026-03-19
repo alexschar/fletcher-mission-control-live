@@ -29,7 +29,7 @@ export default function Sidebar() {
     setActor(getCurrentActor());
 
     function fetchStatus() {
-      fetch("/api/status")
+      fetch("/api/status", { headers: getAuthHeaders() })
         .then((r) => r.json())
         .then((data) => {
           setAgents(data);
