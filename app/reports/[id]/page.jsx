@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import { getAuthHeaders, getCurrentActor, isAuthenticated, logout } from "../../../lib/api-client";
+import ClientTimestamp from "../../components/ClientTimestamp";
 import { markReportAuditViewed } from "../../../lib/notifications";
 import { useParams, useRouter } from "next/navigation";
 
@@ -100,6 +101,11 @@ export default function ReportDetailPage() {
   const canViewAudit = actor === 'alex' || actor === 'fletcher';
   const canViewSuggestions = actor === 'sawyer';
   const canCreateAudit = actor === 'fletcher';
+  const reviewFields = [
+    ['rules_compliance', 'Rules Compliance'],
+    ['scope_assessment', 'Scope Assessment'],
+    ['performance_assessment', 'Performance Assessment'],
+  ];
 
   async function createAddendum() {
     const res = await fetch(`/api/reports/${report.id}/addendums`, {
@@ -157,7 +163,7 @@ export default function ReportDetailPage() {
           <div className="stack-list">
             {report.addendums.map((item) => (
               <div key={item.id} className="subtle-panel">
-                <div className="report-meta">{item.created_by} • {new Date(item.created_at).toLocaleString()}</div>
+                <div className="report-meta">{item.created_by} • <ClientTimestamp value={item.created_at} /></div>
                 <div className="report-text">{item.content}</div>
               </div>
             ))}
@@ -177,7 +183,7 @@ export default function ReportDetailPage() {
       {canViewAudit && (
         <div className="card" style={{ marginBottom: 16 }}>
           <div className="card-header">Fletcher Audit</div>
-          {['audit_content', 'suggestions_for_team', 'suggestions_per_agent', 'rules_compliance', 'scope_assessment', 'performance_assessment'].map((key) => (
+          {['audit_content', 'suggestions_for_team', 'suggestions_per_agent'].map((key) => (
             <div key={key} style={{ marginBottom: 14 }}>
               <label className="field-label">{key.replaceAll('_', ' ')}</label>
               {canCreateAudit ? (
@@ -187,6 +193,29 @@ export default function ReportDetailPage() {
               )}
             </div>
           ))}
+
+          <div style={{ marginTop: 16 }}>
+            <label className="field-label">Fletcher Review</label>
+            <div className="stack-list">
+              {reviewFields.map(([key, label]) => (
+                <div key={key} className="subtle-panel" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                  <span>{label}</span>
+                  {canCreateAudit ? (
+                    <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                      <input
+                        type="checkbox"
+                        checked={auditDraft[key] === 'approved'}
+                        onChange={(e) => setAuditDraft({ ...auditDraft, [key]: e.target.checked ? 'approved' : '' })}
+                      />
+                      <span>{auditDraft[key] === 'approved' ? 'Approved' : 'Pending'}</span>
+                    </label>
+                  ) : (
+                    <div className="report-text">{audit?.[key] === 'approved' ? 'Approved' : 'Pending Fletcher review'}</div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
           {canCreateAudit && <div style={{ display: 'flex', justifyContent: 'flex-end' }}><button className="btn btn-primary" onClick={saveAudit}>Save Audit</button></div>}
         </div>
       )}

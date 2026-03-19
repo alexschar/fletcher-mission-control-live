@@ -9,7 +9,7 @@ function StatusCard() {
 
   useEffect(() => {
     function fetchStatus() {
-      fetch("/api/status", { headers: getAuthHeaders() })
+      fetch("/api/agents", { headers: getAuthHeaders() })
         .then(r => r.ok ? r.json() : (r.status === 401 ? (logout(), window.location.reload()) : {}))
         .then(setAgents)
         .catch(() => {});

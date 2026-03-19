@@ -78,7 +78,7 @@ echo "✅ Wait complete"
 echo ""
 
 echo "── Step 4: Testing production API health ──"
-API_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $TOKEN" "$BASE_URL/api/status" 2>/dev/null || echo "000")
+API_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $TOKEN" "$BASE_URL/api/agents" 2>/dev/null || echo "000")
 if [[ "$API_STATUS" != "200" ]]; then
   echo "❌ FAIL: Production API returned HTTP $API_STATUS"
   exit 1

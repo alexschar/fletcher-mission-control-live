@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import ClientTimestamp from "../components/ClientTimestamp";
 import { getAuthHeaders, isAuthenticated, logout, getCurrentActor } from "../../lib/api-client";
 import { getReportNotifications, hasNewAudit, isNewReport, markReportsListViewed } from "../../lib/notifications";
 import { useRouter } from "next/navigation";
@@ -9,10 +10,6 @@ function statusTone(status) {
   return status === 'submitted' ? 'badge-green' : 'badge-yellow';
 }
 
-function formatDate(value) {
-  if (!value) return '—';
-  return new Date(value).toLocaleString();
-}
 
 export default function ReportsPage() {
   const [reports, setReports] = useState([]);
@@ -124,8 +121,8 @@ export default function ReportsPage() {
                 <span className={`badge ${statusTone(report.status)}`}>{report.status}</span>
               </div>
               <div className="report-row-meta">
-                <span>Created {formatDate(report.created_at)}</span>
-                <span>Submitted {formatDate(report.submitted_at)}</span>
+                <span>Created <ClientTimestamp value={report.created_at} fallback="—" /></span>
+                <span>Submitted <ClientTimestamp value={report.submitted_at} fallback="—" /></span>
                 <span>{report.addendums?.length || 0} addendum(s)</span>
               </div>
             </Link>

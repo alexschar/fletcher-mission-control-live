@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { getAuthHeaders, isAuthenticated, logout } from "../../lib/api-client";
+import ClientTimestamp from "../components/ClientTimestamp";
 import { useRouter } from "next/navigation";
 
 function normalizeScheduleResponse(data, previous = []) {
@@ -123,7 +124,7 @@ export default function SchedulePage() {
             </div>
             <div className="schedule-item-last">
               <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                {item.lastRun ? `Last: ${new Date(item.lastRun).toLocaleString()}` : "Never run"}
+                {item.lastRun ? <>Last: <ClientTimestamp value={item.lastRun} /></> : "Never run"}
               </div>
             </div>
             <button type="button" className="btn btn-sm" onClick={(e) => { e.preventDefault(); toggleItem(item.id, item.status); }}>

@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { getCurrentActor, setCurrentActor, getAuthHeaders } from "../../lib/api-client";
+import { getAuthHeaders } from "../../lib/api-client";
 import { getReportNotifications, subscribeToNotificationChanges } from "../../lib/notifications";
 
 const NAV_ITEMS = [
@@ -21,15 +21,12 @@ export default function Sidebar() {
   const pathname = usePathname();
   const [agents, setAgents] = useState({});
   const [loading, setLoading] = useState(true);
-  const [actor, setActor] = useState("sawyer");
   const [reportNotificationCount, setReportNotificationCount] = useState(0);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
-    setActor(getCurrentActor());
-
     function fetchStatus() {
-      fetch("/api/status", { headers: getAuthHeaders() })
+      fetch("/api/agents", { headers: getAuthHeaders() })
         .then((r) => r.json())
         .then((data) => {
           setAgents(data);
@@ -88,11 +85,7 @@ export default function Sidebar() {
   const workingCount = Object.values(agents).filter((a) => a.status === "working").length;
   const totalCount = Object.keys(agents).length;
 
-  function handleActorChange(nextActor) {
-    setActor(nextActor);
-    setCurrentActor(nextActor);
-    window.location.reload();
-  }
+
 
   function renderNavLinks() {
     return NAV_ITEMS.map((item) => {
@@ -124,14 +117,6 @@ export default function Sidebar() {
           ) : null}
         </div>
         <div className="sidebar-nav">{renderNavLinks()}</div>
-        <div className="sidebar-viewer">
-          <label className="field-label">Viewer</label>
-          <select className="select" value={actor} onChange={(e) => handleActorChange(e.target.value)}>
-            <option value="sawyer">Sawyer</option>
-            <option value="alex">Alex</option>
-            <option value="fletcher">Fletcher</option>
-          </select>
-        </div>
         <div className="sidebar-status">
           <span className="sidebar-status-dot" style={{ background: dotColor }}></span>
           <span>{agentName} {agentStatus.charAt(0).toUpperCase() + agentStatus.slice(1)}</span>
