@@ -41,7 +41,7 @@ export async function POST(request) {
       priority: body.priority || 'medium'
     });
     
-    return NextResponse.json(task);
+    return NextResponse.json([task], { status: 201 });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
