@@ -22,17 +22,17 @@ export async function POST(request) {
     const body = await request.json();
     
     if (body.action === 'update') {
-      const updated = await db.updateTask(body.id, body.updates);
-      return NextResponse.json(updated);
+      await db.updateTask(body.id, body.updates);
+      return NextResponse.json(await db.getTasks());
     }
     
     if (body.action === 'delete') {
       await db.deleteTask(body.id);
-      return NextResponse.json({ ok: true });
+      return NextResponse.json(await db.getTasks());
     }
     
     // Default: create a new task
-    const task = await db.createTask({
+    await db.createTask({
       title: body.title,
       description: body.description,
       status: body.status || 'backlog',
@@ -41,7 +41,7 @@ export async function POST(request) {
       priority: body.priority || 'medium'
     });
     
-    return NextResponse.json([task], { status: 201 });
+    return NextResponse.json(await db.getTasks(), { status: 201 });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
