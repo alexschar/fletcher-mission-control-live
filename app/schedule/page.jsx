@@ -3,6 +3,15 @@ import { useState, useEffect } from "react";
 import { getAuthHeaders, isAuthenticated, logout } from "../../lib/api-client";
 import { useRouter } from "next/navigation";
 
+function normalizeScheduleResponse(data, previous = []) {
+  if (Array.isArray(data)) return data;
+  if (data && typeof data === "object") {
+    if (Array.isArray(data.items)) return data.items;
+    if (data.ok) return previous;
+  }
+  return previous;
+}
+
 export default function SchedulePage() {
   const [items, setItems] = useState([]);
   const [adding, setAdding] = useState(false);
@@ -16,7 +25,7 @@ export default function SchedulePage() {
     }
     fetch("/api/schedule", { headers: getAuthHeaders() })
       .then(r => r.ok ? r.json() : (r.status === 401 ? (logout(), router.push('/login')) : []))
-      .then(setItems)
+      .then(data => setItems(normalizeScheduleResponse(data)))
       .catch(() => {});
   }, [router]);
 
@@ -34,7 +43,7 @@ export default function SchedulePage() {
       return;
     }
     const updated = await res.json();
-    setItems(updated);
+    setItems(current => normalizeScheduleResponse(updated, current));
     setForm({ name: "", schedule: "", description: "" });
     setAdding(false);
   }
@@ -51,7 +60,7 @@ export default function SchedulePage() {
       return;
     }
     const updated = await res.json();
-    setItems(updated);
+    setItems(current => normalizeScheduleResponse(updated, current));
   }
 
   // Seed with defaults if empty
@@ -70,7 +79,7 @@ export default function SchedulePage() {
             <p>Recurring tasks and cron jobs</p>
           </div>
           <div className="page-header-actions">
-            <button className="btn btn-primary" onClick={() => setAdding(!adding)}>
+            <button type="button" className="btn btn-primary" onClick={(e) => { e.preventDefault(); setAdding(v => !v); }}>
               {adding ? "Cancel" : "+ New Job"}
             </button>
           </div>
@@ -117,7 +126,7 @@ export default function SchedulePage() {
                 {item.lastRun ? `Last: ${new Date(item.lastRun).toLocaleString()}` : "Never run"}
               </div>
             </div>
-            <button className="btn btn-sm" onClick={() => toggleItem(item.id, item.status)}>
+            <button type="button" className="btn btn-sm" onClick={(e) => { e.preventDefault(); toggleItem(item.id, item.status); }}>
               {item.status === "active" ? "Pause" : "Resume"}
             </button>
           </div>

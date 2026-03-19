@@ -10,6 +10,15 @@ const COLUMNS = [
   { id: "done", label: "Done", color: "var(--green)" },
 ];
 
+function normalizeTasksResponse(data, previous = []) {
+  if (Array.isArray(data)) return data;
+  if (data && typeof data === "object") {
+    if (Array.isArray(data.tasks)) return data.tasks;
+    if (data.ok) return previous;
+  }
+  return previous;
+}
+
 function StatusCard() {
   const [agents, setAgents] = useState({});
   const [elapsed, setElapsed] = useState("00:00:00");
@@ -91,7 +100,7 @@ export default function TasksPage() {
     }
     fetch("/api/tasks", { headers: getAuthHeaders() })
       .then(r => r.ok ? r.json() : (r.status === 401 ? (logout(), router.push('/login')) : []))
-      .then(setTasks)
+      .then(data => setTasks(normalizeTasksResponse(data)))
       .catch(() => {});
   }, [router]);
 
@@ -115,7 +124,7 @@ export default function TasksPage() {
       return;
     }
     const updated = await res.json();
-    setTasks(updated);
+    setTasks(current => normalizeTasksResponse(updated, current));
     setNewTitle("");
     setNewDesc("");
     setTitleError("");
@@ -134,7 +143,7 @@ export default function TasksPage() {
       return;
     }
     const updated = await res.json();
-    setTasks(updated);
+    setTasks(current => normalizeTasksResponse(updated, current));
   }
 
   async function removeTask(id) {
@@ -149,7 +158,7 @@ export default function TasksPage() {
       return;
     }
     const updated = await res.json();
-    setTasks(updated);
+    setTasks(current => normalizeTasksResponse(updated, current.filter(task => task.id !== id)));
   }
 
   return (

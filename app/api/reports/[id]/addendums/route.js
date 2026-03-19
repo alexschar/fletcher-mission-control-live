@@ -1,7 +1,26 @@
 import { NextResponse } from 'next/server';
 const { authMiddleware } = require('../../../../../lib/auth');
 const { requireActor } = require('../../../../../lib/access');
-const { addReportAddendum } = require('../../../../../lib/supabase');
+const { addReportAddendum, getReportById } = require('../../../../../lib/supabase');
+
+export async function GET(request, { params }) {
+  const authError = authMiddleware(request);
+  if (authError) return authError;
+
+  try {
+    requireActor(request, ['alex', 'fletcher', 'sawyer']);
+    const { id } = await params;
+    const report = await getReportById(id);
+
+    if (!report) {
+      return NextResponse.json({ error: 'Report not found' }, { status: 404 });
+    }
+
+    return NextResponse.json(Array.isArray(report.addendums) ? report.addendums : []);
+  } catch (error) {
+    return NextResponse.json({ error: error.message }, { status: error.status || 500 });
+  }
+}
 
 export async function POST(request, { params }) {
   const authError = authMiddleware(request);
