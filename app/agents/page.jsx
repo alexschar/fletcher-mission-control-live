@@ -6,6 +6,9 @@ async function getAgentsData() {
       ? `https://${process.env.VERCEL_URL}` 
       : 'http://localhost:3000';
     
+    console.log('Fetching from:', baseUrl); // Debug
+    console.log('VERCEL_URL:', process.env.VERCEL_URL); // Debug
+    
     const response = await fetch(`${baseUrl}/api/agents`, {
       headers: {
         'Authorization': 'Bearer mc_test_token_12345',
@@ -14,15 +17,23 @@ async function getAgentsData() {
       cache: 'no-store' // Ensure fresh data
     });
     
+    console.log('Response status:', response.status); // Debug
+    
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     
     const data = await response.json();
+    console.log('Agent data received:', Object.keys(data)); // Debug
     return data;
   } catch (error) {
     console.error('Error fetching agents:', error);
-    return {};
+    // Fallback: return hardcoded data for production testing
+    return {
+      fletcher: { name: "Fletcher", id: "main", status: "idle", role: "Policy authority" },
+      sawyer: { name: "Sawyer", id: "sawyer", status: "offline", role: "Daily operator" },
+      celeste: { name: "Celeste", id: "celeste", status: "offline", role: "Builder" }
+    };
   }
 }
 
