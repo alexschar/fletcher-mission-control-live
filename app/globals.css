@@ -339,6 +339,10 @@ tr:hover td { color: var(--text-primary); background: var(--bg-card-hover); }
 .content-error-banner, .content-error { color: #ffd7d7; background: rgba(248, 113, 113, 0.12); border: 1px solid rgba(248, 113, 113, 0.3); border-radius: 12px; }
 .content-error-banner { margin-bottom: 16px; }
 .content-error { grid-column: 1 / -1; padding: 12px 14px; }
+.error-boundary { max-width: 720px; margin: 24px auto; padding: 24px; }
+.error-boundary-badge { display: inline-flex; align-items: center; padding: 6px 10px; border-radius: 999px; background: rgba(248, 113, 113, 0.15); color: #ffb4b4; font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 12px; }
+.error-boundary-details { margin-top: 16px; padding: 12px 14px; border-radius: 10px; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--border); color: var(--text-secondary); overflow-x: auto; white-space: pre-wrap; }
+.error-boundary-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 18px; }
 
 @media (max-width: 1024px) {
   .grid-3, .grid-4, .content-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }

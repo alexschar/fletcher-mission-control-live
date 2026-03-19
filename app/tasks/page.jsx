@@ -10,13 +10,74 @@ const COLUMNS = [
   { id: "done", label: "Done", color: "var(--green)" },
 ];
 
+function normalizeTaskStatus(status) {
+  const value = String(status || "backlog").trim().toLowerCase();
+  if (value === "in-progress") return "in_progress";
+  if (value === "in progress") return "in_progress";
+  if (value === "todo") return "backlog";
+  if (value === "completed") return "done";
+  return value;
+}
+
+function normalizeTask(task) {
+  if (!task || typeof task !== "object") return null;
+  return {
+    ...task,
+    id: task.id || task._id || task.taskId,
+    title: typeof task.title === "string" ? task.title : String(task.title || "Untitled Task"),
+    description: typeof task.description === "string" ? task.description : (task.description || ""),
+    status: normalizeTaskStatus(task.status),
+  };
+}
+
 function normalizeTasksResponse(data, previous = []) {
-  if (Array.isArray(data)) return data;
-  if (data && typeof data === "object") {
-    if (Array.isArray(data.tasks)) return data.tasks;
-    if (data.ok) return previous;
+  let tasks = data;
+
+  if (typeof tasks === "string") {
+    try {
+      tasks = JSON.parse(tasks);
+    } catch {
+      return previous;
+    }
   }
-  return previous;
+
+  if (tasks && typeof tasks === "object" && !Array.isArray(tasks)) {
+    if (Array.isArray(tasks.tasks)) {
+      tasks = tasks.tasks;
+    } else if (Array.isArray(tasks.data)) {
+      tasks = tasks.data;
+    } else if (tasks.ok) {
+      return previous;
+    }
+  }
+
+  if (!Array.isArray(tasks)) return previous;
+
+  return tasks
+    .map(normalizeTask)
+    .filter(Boolean)
+    .filter(task => task.id && COLUMNS.some(col => col.id === task.status));
+}
+
+async function fetchTasks() {
+  const response = await fetch("/api/tasks", {
+    headers: getAuthHeaders(),
+    cache: "no-store",
+  });
+
+  if (response.status === 401) {
+    logout();
+    throw new Error("unauthorized");
+  }
+
+  const text = await response.text();
+  if (!text) return [];
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
+  }
 }
 
 function StatusCard() {
@@ -98,10 +159,14 @@ export default function TasksPage() {
       router.push('/login');
       return;
     }
-    fetch("/api/tasks", { headers: getAuthHeaders() })
-      .then(r => r.ok ? r.json() : (r.status === 401 ? (logout(), router.push('/login')) : []))
+
+    fetchTasks()
       .then(data => setTasks(normalizeTasksResponse(data)))
-      .catch(() => {});
+      .catch(error => {
+        if (error?.message === "unauthorized") {
+          router.push('/login');
+        }
+      });
   }, [router]);
 
   async function addTask(e) {
