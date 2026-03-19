@@ -2,6 +2,24 @@ import { NextResponse } from 'next/server';
 const { authMiddleware } = require('../../../../lib/auth');
 const { getContentDropById, updateContentDrop } = require('../../../../lib/supabase');
 
+export async function GET(request, { params }) {
+  const authError = authMiddleware(request);
+  if (authError) return authError;
+
+  try {
+    const { id } = await params;
+    const record = await getContentDropById(id);
+
+    if (!record) {
+      return NextResponse.json({ error: 'Content drop not found' }, { status: 404 });
+    }
+
+    return NextResponse.json(record, { status: 200 });
+  } catch (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
 export async function PATCH(request, { params }) {
   const authError = authMiddleware(request);
   if (authError) return authError;
