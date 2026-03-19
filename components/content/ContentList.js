@@ -43,7 +43,7 @@ export default function ContentList({ items = [], onSelect, onToggleProcessed })
           </thead>
           <tbody>
             {items.map((item) => (
-              <tr key={item.id} onClick={() => onSelect?.(item)} style={{ cursor: "pointer" }}>
+              <tr key={item.id} className="content-table-row" onClick={() => onSelect?.(item)} style={{ cursor: "pointer" }}>
                 <td>
                   <span className="content-platform-pill">
                     {PLATFORM_LABELS[item.platform] || item.platform || "Other"}
@@ -78,7 +78,7 @@ export default function ContentList({ items = [], onSelect, onToggleProcessed })
 
       <div className="content-mobile-list">
         {items.map((item) => (
-          <button key={item.id} type="button" className="content-mobile-card" onClick={() => onSelect?.(item)}>
+          <button key={item.id} type="button" className="content-mobile-card content-card-layer" onClick={() => onSelect?.(item)}>
             <div className="content-mobile-card-top">
               <span className="content-platform-pill">
                 {PLATFORM_LABELS[item.platform] || item.platform || "Other"}

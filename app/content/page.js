@@ -152,7 +152,7 @@ export default function ContentPage() {
   }
 
   return (
-    <div>
+    <div className="content-page-shell">
       <div className="page-header">
         <div className="page-header-row content-header">
           <div>
@@ -177,7 +177,7 @@ export default function ContentPage() {
       </div>
 
       {activeTab === "all" ? (
-        <div className="card" style={{ marginBottom: 16 }}>
+        <div className="card content-filters-card" style={{ marginBottom: 16 }}>
           <div className="filters-row">
             <div className="filter-group">
               <label>Search</label>
@@ -199,7 +199,7 @@ export default function ContentPage() {
         </div>
       ) : null}
 
-      <div className="card">
+      <div className="card content-list-card">
         <div className="card-header">
           {activeTab === "inbox" ? "Unprocessed Queue" : "All Content"}
         </div>

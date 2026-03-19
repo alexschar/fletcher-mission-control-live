@@ -212,25 +212,113 @@ tr:hover td { color: var(--text-primary); background: var(--bg-card-hover); }
 .tier-3 { color: var(--red); }
 
 /* Content hub */
+.content-page-shell {
+  position: relative;
+  isolation: isolate;
+  z-index: 0;
+}
+
 .content-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
-.content-tab-row { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+.content-tab-row {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
 .content-tab { border: 1px solid var(--border); background: var(--bg-card); color: var(--text-secondary); border-radius: 999px; padding: 10px 14px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
 .content-tab span { background: var(--bg-card-hover); color: var(--text-muted); border-radius: 999px; padding: 2px 8px; font-size: 12px; }
 .content-tab.active { border-color: var(--accent); color: var(--text-primary); }
 .content-row-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .content-checkbox-row { display: inline-flex; align-items: center; gap: 8px; color: var(--text-secondary); font-size: 13px; }
 .content-checkbox-row.compact { font-size: 12px; }
-.content-card-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.content-card-grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+.content-card,
+.content-card-layer {
+  position: relative;
+  z-index: 1;
+}
 .content-card { text-align: left; background: var(--bg-card); color: inherit; border: 1px solid var(--border); border-radius: 14px; padding: 16px; cursor: pointer; transition: border-color 0.15s ease, transform 0.15s ease; }
-.content-card:hover { border-color: var(--accent); transform: translateY(-1px); }
+.content-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+  z-index: 2;
+}
 .content-card-top, .content-card-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .content-card-top { margin-bottom: 14px; }
 .content-card-title { font-size: 15px; font-weight: 600; color: var(--text-primary); margin-bottom: 10px; overflow-wrap: anywhere; }
 .content-card-summary { color: var(--text-secondary); font-size: 13px; line-height: 1.6; min-height: 64px; margin-bottom: 16px; overflow-wrap: anywhere; }
 .content-card-footer { color: var(--text-muted); font-size: 12px; }
 .content-platform-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: rgba(108, 138, 255, 0.12); color: var(--text-primary); font-size: 12px; max-width: 100%; }
-.content-overlay { position: fixed; inset: 0; background: rgba(5, 6, 10, 0.72); display: flex; justify-content: flex-end; z-index: 40; }
-.content-panel, .content-modal { background: var(--bg-card); border-left: 1px solid var(--border); height: 100vh; overflow-y: auto; padding: 24px; width: min(720px, 100%); }
+.content-filters-card,
+.content-list-card,
+.content-table-desktop,
+.content-mobile-list {
+  position: relative;
+  z-index: 1;
+}
+.content-filters-card {
+  overflow: visible;
+  z-index: 4;
+}
+.content-list-card {
+  overflow: visible;
+}
+.filters-row,
+.filter-group {
+  position: relative;
+}
+.filter-group select,
+.filter-group .select,
+.filter-group .input {
+  position: relative;
+  z-index: 1;
+}
+.content-table-desktop {
+  overflow-x: auto;
+  overflow-y: visible;
+}
+.content-table-row,
+.content-mobile-card {
+  position: relative;
+  z-index: 1;
+}
+.content-table-row:hover,
+.content-mobile-card:hover {
+  z-index: 2;
+}
+.content-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 6, 10, 0.72);
+  display: flex;
+  justify-content: flex-end;
+}
+.content-detail-overlay {
+  z-index: 70;
+}
+.content-modal-overlay {
+  z-index: 80;
+}
+.content-panel, .content-modal {
+  position: relative;
+  z-index: 1;
+  background: var(--bg-card);
+  border-left: 1px solid var(--border);
+  height: 100vh;
+  overflow-y: auto;
+  padding: 24px;
+  width: min(720px, 100%);
+  box-shadow: -24px 0 48px rgba(0, 0, 0, 0.32);
+}
 .content-modal { margin-left: auto; }
 .content-panel-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 20px; }
 .content-panel-header h2 { font-size: 22px; line-height: 1.2; margin-top: 4px; }

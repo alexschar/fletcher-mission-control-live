@@ -58,7 +58,7 @@ export default function ContentDetail({ item, onClose, onSave }) {
   }
 
   return (
-    <div className="content-overlay" onClick={onClose}>
+    <div className="content-overlay content-detail-overlay" onClick={onClose}>
       <div className="content-panel" onClick={(event) => event.stopPropagation()}>
         <div className="content-panel-header">
           <div>

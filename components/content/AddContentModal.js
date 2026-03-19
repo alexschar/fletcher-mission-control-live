@@ -42,7 +42,7 @@ export default function AddContentModal({ onClose, onSave }) {
   }
 
   return (
-    <div className="content-overlay" onClick={onClose}>
+    <div className="content-overlay content-modal-overlay" onClick={onClose}>
       <div className="content-modal" onClick={(event) => event.stopPropagation()}>
         <div className="content-panel-header">
           <div>
