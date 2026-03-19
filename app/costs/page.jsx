@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { getAuthHeaders, isAuthenticated, logout } from "../../lib/api-client";
 import { useRouter } from "next/navigation";
+import { CostsSummarySkeleton, CostsTableSkeleton } from "../components/Skeleton";
 
 export default function CostsPage() {
   const [data, setData] = useState(null);
@@ -32,60 +33,67 @@ export default function CostsPage() {
         <p>API spend monitoring and budget alerts</p>
       </div>
 
-      <div className="grid-3">
-        <div className="card">
-          <div className="card-header">Today</div>
-          <div className={`card-value ${dailyTotal > 5 ? "red" : "green"}`}>
-            ${dailyTotal.toFixed(4)}
-          </div>
-        </div>
-        <div className="card">
-          <div className="card-header">This Month</div>
-          <div className={`card-value ${alertLevel}`}>
-            ${monthlyTotal.toFixed(2)}
-          </div>
-        </div>
-        <div className="card">
-          <div className="card-header">Budget Status</div>
-          <div style={{ marginTop: 8 }}>
-            <span className={`badge badge-${alertLevel}`}>
-              {alertLevel === "green" ? "On Track" : alertLevel === "yellow" ? "Watch" : "Over Budget"}
-            </span>
-            <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 8 }}>
-              Target: $30/month
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid-2">
-        <div className="card">
-          <div className="card-header">Recent API Calls</div>
-          {entries.length > 0 ? (
-            <div className="table-wrap">
-              <table>
-                <thead><tr><th>Time</th><th>Provider</th><th>Model</th><th>Cost</th></tr></thead>
-                <tbody>
-                  {entries.slice(0, 10).map((e, i) => (
-                    <tr key={i}>
-                      <td>{e.timestamp ? new Date(e.timestamp).toLocaleTimeString() : "-"}</td>
-                      <td>{e.provider || "-"}</td>
-                      <td style={{ fontFamily: "monospace", fontSize: 12 }}>{e.model || "-"}</td>
-                      <td style={{ fontFamily: "monospace", whiteSpace: "nowrap" }}>
-                        ${Number(e.cost_est || 0).toFixed(4)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+      {loading ? (
+        <>
+          <CostsSummarySkeleton />
+          <CostsTableSkeleton />
+        </>
+      ) : (
+        <>
+          <div className="grid-3">
+            <div className="card">
+              <div className="card-header">Today</div>
+              <div className={`card-value ${dailyTotal > 5 ? "red" : "green"}`}>
+                ${dailyTotal.toFixed(4)}
+              </div>
             </div>
-          ) : (
-            <div className="empty">No entries yet</div>
-          )}
-        </div>
-      </div>
+            <div className="card">
+              <div className="card-header">This Month</div>
+              <div className={`card-value ${alertLevel}`}>
+                ${monthlyTotal.toFixed(2)}
+              </div>
+            </div>
+            <div className="card">
+              <div className="card-header">Budget Status</div>
+              <div style={{ marginTop: 8 }}>
+                <span className={`badge badge-${alertLevel}`}>
+                  {alertLevel === "green" ? "On Track" : alertLevel === "yellow" ? "Watch" : "Over Budget"}
+                </span>
+                <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 8 }}>
+                  Target: $30/month
+                </p>
+              </div>
+            </div>
+          </div>
 
-      {loading && <div className="empty">Loading cost data...</div>}
+          <div className="grid-2">
+            <div className="card">
+              <div className="card-header">Recent API Calls</div>
+              {entries.length > 0 ? (
+                <div className="table-wrap">
+                  <table>
+                    <thead><tr><th>Time</th><th>Provider</th><th>Model</th><th>Cost</th></tr></thead>
+                    <tbody>
+                      {entries.slice(0, 10).map((e, i) => (
+                        <tr key={i}>
+                          <td>{e.timestamp ? new Date(e.timestamp).toLocaleTimeString() : "-"}</td>
+                          <td>{e.provider || "-"}</td>
+                          <td style={{ fontFamily: "monospace", fontSize: 12 }}>{e.model || "-"}</td>
+                          <td style={{ fontFamily: "monospace", whiteSpace: "nowrap" }}>
+                            ${Number(e.cost_est || 0).toFixed(4)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="empty">No entries yet</div>
+              )}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
