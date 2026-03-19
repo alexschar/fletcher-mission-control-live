@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import ContentPipelineOverview from '../components/dashboard/ContentPipelineOverview';
 import { getDashboardData } from '../lib/page-data';
 
 function formatCurrency(value) {
@@ -79,6 +80,8 @@ export default async function HomePage() {
           <div className="card-value">{data.pendingReportsCount}</div>
           <p className="dashboard-card-note">Reports not yet submitted</p>
         </section>
+
+        <ContentPipelineOverview />
       </div>
     </div>
   );
