@@ -6,11 +6,33 @@ import { getAuthHeaders, isAuthenticated, logout, getCurrentActor } from "../../
 import { getReportNotifications, hasNewAudit, isNewReport, markReportsListViewed } from "../../lib/notifications";
 import { useRouter } from "next/navigation";
 import { useToast } from "../components/ToastProvider";
+import { FiltersSkeleton, ReportsListSkeleton } from "../components/Skeleton";
+
+const REPORT_STATUS_FILTERS = [
+  { value: "all", label: "All" },
+  { value: "draft", label: "Draft" },
+  { value: "submitted", label: "Submitted" },
+];
+
+const REPORT_AUTHOR_FILTERS = [
+  { value: "all", label: "All" },
+  { value: "fletcher", label: "Fletcher" },
+  { value: "sawyer", label: "Sawyer" },
+  { value: "celeste", label: "Celeste" },
+];
 
 function statusTone(status) {
   return status === 'submitted' ? 'badge-green' : 'badge-yellow';
 }
 
+function normalizeDateValue(value, endOfDay = false) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  if (endOfDay) date.setHours(23, 59, 59, 999);
+  else date.setHours(0, 0, 0, 0);
+  return date.getTime();
+}
 
 export default function ReportsPage() {
   const [reports, setReports] = useState([]);
@@ -18,6 +40,11 @@ export default function ReportsPage() {
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState({ title: '', goal: '', summary: '' });
   const [notifications, setNotifications] = useState({ newReportsCount: 0, reportsWithNewAudits: [], totalCount: 0 });
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [authorFilter, setAuthorFilter] = useState("all");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
   const router = useRouter();
   const actor = useMemo(() => getCurrentActor(), []);
   const toast = useToast();
@@ -45,6 +72,38 @@ export default function ReportsPage() {
     }
     loadReports();
   }, [router]);
+
+  const filteredReports = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    const fromTs = normalizeDateValue(fromDate, false);
+    const toTs = normalizeDateValue(toDate, true);
+
+    return reports.filter((report) => {
+      const status = String(report.status || '').toLowerCase();
+      const author = String(report.created_by || '').toLowerCase();
+      const createdAt = report.created_at ? new Date(report.created_at).getTime() : null;
+
+      if (statusFilter !== 'all' && status !== statusFilter) return false;
+      if (authorFilter !== 'all' && author !== authorFilter) return false;
+      if (fromTs && (!createdAt || createdAt < fromTs)) return false;
+      if (toTs && (!createdAt || createdAt > toTs)) return false;
+      if (!query) return true;
+
+      return [
+        report.title,
+        report.summary,
+        report.goal,
+        report.existing_state,
+        report.implemented_changes,
+        report.agent_assignments,
+        report.escalations,
+        report.timeline,
+        report.memories_added,
+      ]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(query));
+    });
+  }, [reports, searchQuery, statusFilter, authorFilter, fromDate, toDate]);
 
   async function createReport(e) {
     e.preventDefault();
@@ -108,9 +167,46 @@ export default function ReportsPage() {
         </div>
       )}
 
-      {loading ? <div className="empty">Loading reports...</div> : reports.length === 0 ? <div className="card empty-card"><p>No reports yet.</p></div> : (
+      {loading ? (
+        <FiltersSkeleton />
+      ) : (
+        <div className="card content-filters-card" style={{ marginBottom: 16 }}>
+          <div className="filters-row">
+            <div className="filter-group" style={{ minWidth: 260 }}>
+              <label>Search</label>
+              <input className="input" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Search title or content" />
+            </div>
+            <div className="filter-group">
+              <label>Status</label>
+              <select className="input" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+                {REPORT_STATUS_FILTERS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+              </select>
+            </div>
+            <div className="filter-group">
+              <label>Author</label>
+              <select className="input" value={authorFilter} onChange={(event) => setAuthorFilter(event.target.value)}>
+                {REPORT_AUTHOR_FILTERS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+              </select>
+            </div>
+            <div className="filter-group">
+              <label>From</label>
+              <input className="input" type="date" value={fromDate} onChange={(event) => setFromDate(event.target.value)} />
+            </div>
+            <div className="filter-group">
+              <label>To</label>
+              <input className="input" type="date" value={toDate} onChange={(event) => setToDate(event.target.value)} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="results-count">
+        {loading ? 'Loading reports…' : `Showing ${filteredReports.length} of ${reports.length} report${reports.length === 1 ? '' : 's'}`}
+      </div>
+
+      {loading ? <ReportsListSkeleton /> : filteredReports.length === 0 ? <div className="card empty-card"><p>No reports found.</p></div> : (
         <div className="reports-list">
-          {reports.map((report) => (
+          {filteredReports.map((report) => (
             <Link href={`/reports/${report.id}`} key={report.id} className="card report-row" style={{ display: 'block' }}>
               <div className="report-row-top">
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -124,6 +220,7 @@ export default function ReportsPage() {
                 <span className={`badge ${statusTone(report.status)}`}>{report.status}</span>
               </div>
               <div className="report-row-meta">
+                <span>Author {(report.created_by || '—').toString().charAt(0).toUpperCase() + (report.created_by || '—').toString().slice(1)}</span>
                 <span>Created <ClientTimestamp value={report.created_at} fallback="—" /></span>
                 <span>Submitted <ClientTimestamp value={report.submitted_at} fallback="—" /></span>
                 <span>{report.addendums?.length || 0} addendum(s)</span>
