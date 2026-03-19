@@ -80,6 +80,7 @@ export default function TasksPage() {
   const [tasks, setTasks] = useState([]);
   const [newTitle, setNewTitle] = useState("");
   const [newDesc, setNewDesc] = useState("");
+  const [titleError, setTitleError] = useState("");
   const [adding, setAdding] = useState(false);
   const router = useRouter();
 
@@ -96,11 +97,17 @@ export default function TasksPage() {
 
   async function addTask(e) {
     e.preventDefault();
-    if (!newTitle.trim()) return;
+    const trimmedTitle = newTitle.trim();
+    if (!trimmedTitle) {
+      setTitleError("Title is required");
+      return;
+    }
+
+    setTitleError("");
     const res = await fetch("/api/tasks", {
       method: "POST",
       headers: getAuthHeaders(),
-      body: JSON.stringify({ title: newTitle, description: newDesc, status: "backlog" })
+      body: JSON.stringify({ title: trimmedTitle, description: newDesc, status: "backlog" })
     });
     if (res.status === 401) {
       logout();
@@ -111,6 +118,7 @@ export default function TasksPage() {
     setTasks(updated);
     setNewTitle("");
     setNewDesc("");
+    setTitleError("");
     setAdding(false);
   }
 
@@ -152,7 +160,10 @@ export default function TasksPage() {
           <p>Kanban-style task management</p>
         </div>
         <div className="page-header-actions">
-          <button className="btn btn-primary" onClick={() => setAdding(!adding)}>
+          <button className="btn btn-primary" onClick={() => {
+            setAdding(!adding);
+            setTitleError("");
+          }}>
             {adding ? "Cancel" : "+ New Task"}
           </button>
         </div>
@@ -165,7 +176,26 @@ export default function TasksPage() {
           <form onSubmit={addTask} className="form-inline">
             <div className="form-field-grow-2">
               <label className="field-label">Title</label>
-              <input className="input" value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="Task title" autoFocus />
+              <input
+                className="input"
+                style={titleError ? { borderColor: "var(--red)" } : undefined}
+                value={newTitle}
+                onChange={e => {
+                  setNewTitle(e.target.value);
+                  if (titleError && e.target.value.trim()) {
+                    setTitleError("");
+                  }
+                }}
+                placeholder="Task title"
+                autoFocus
+                aria-invalid={!!titleError}
+                aria-describedby={titleError ? "new-task-title-error" : undefined}
+              />
+              {titleError && (
+                <div id="new-task-title-error" style={{ color: "var(--red)", fontSize: 12, marginTop: 6 }}>
+                  {titleError}
+                </div>
+              )}
             </div>
             <div className="form-field-grow-3">
               <label className="field-label">Description</label>
