@@ -26,7 +26,6 @@ function StatusCard() {
     return () => clearInterval(interval);
   }, []);
 
-  // Find the active working agent
   const activeAgent = Object.values(agents).find(a => a.status === 'working') 
     || Object.values(agents).find(a => a.status !== 'offline')
     || Object.values(agents)[0];
@@ -147,17 +146,15 @@ export default function TasksPage() {
 
   return (
     <div>
-      <div className="page-header">
-        <div className="page-header-row">
-          <div>
-            <h1>Task Board</h1>
-            <p>Kanban-style task management</p>
-          </div>
-          <div className="page-header-actions">
-            <button className="btn btn-primary" onClick={() => setAdding(!adding)}>
-              {adding ? "Cancel" : "+ New Task"}
-            </button>
-          </div>
+      <div className="page-header page-header-row">
+        <div>
+          <h1>Task Board</h1>
+          <p>Kanban-style task management</p>
+        </div>
+        <div className="page-header-actions">
+          <button className="btn btn-primary" onClick={() => setAdding(!adding)}>
+            {adding ? "Cancel" : "+ New Task"}
+          </button>
         </div>
       </div>
 

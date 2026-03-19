@@ -25,8 +25,6 @@ export default function CostsPage() {
   const entries = data?.entries ?? [];
 
   const alertLevel = monthlyTotal > 50 ? "red" : monthlyTotal > 20 ? "yellow" : "green";
-
-  // SVG chart
   const maxY = Math.max(0.01, ...daily.map(d => d.total));
   const chartPoints = daily.slice().reverse().map((d, i, arr) => {
     const x = arr.length <= 1 ? 300 : (i / (arr.length - 1)) * 580 + 10;

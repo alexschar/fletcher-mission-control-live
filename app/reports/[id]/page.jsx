@@ -126,12 +126,12 @@ export default function ReportDetailPage() {
 
   return (
     <div>
-      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16 }}>
+      <div className="page-header page-header-row">
         <div>
           <h1>{report.title}</h1>
           <p>Submitted report • Viewing as {actor}</p>
         </div>
-        <div style={{ display: 'flex', gap: 8 }} />
+        <div className="page-header-actions" />
       </div>
 
       <div className="card" style={{ marginBottom: 16 }}>

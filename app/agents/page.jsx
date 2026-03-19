@@ -33,10 +33,7 @@ export default function AgentsPage() {
       return;
     }
     fetchAgentData();
-    
-    // Poll every 30 seconds for cost-effective real-time updates
     const interval = setInterval(fetchAgentData, 30000);
-    
     return () => clearInterval(interval);
   }, []);
 
@@ -66,7 +63,7 @@ export default function AgentsPage() {
     const now = new Date();
     const diffMs = now - date;
     const diffMinutes = Math.floor(diffMs / 60000);
-    
+
     if (diffMinutes < 1) return 'Just now';
     if (diffMinutes < 60) return `${diffMinutes}m ago`;
     if (diffMinutes < 1440) return `${Math.floor(diffMinutes / 60)}h ago`;
@@ -94,16 +91,16 @@ export default function AgentsPage() {
             <div key={agent.id} className="card agent-card">
               <div className="agent-header">
                 <div className="agent-info">
-                  <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                     <span style={{ fontSize: '24px' }}>{getStatusIcon(agent.status)}</span>
                     {agent.name}
                   </h3>
                   <p className="agent-role">{agent.role}</p>
                 </div>
                 <div className="agent-status">
-                  <span 
+                  <span
                     className="status-indicator"
-                    style={{ 
+                    style={{
                       backgroundColor: getStatusColor(agent.status),
                       display: 'inline-block',
                       width: '12px',
@@ -117,7 +114,7 @@ export default function AgentsPage() {
                   </span>
                 </div>
               </div>
-              
+
               <div className="agent-details">
                 <div className="detail-row">
                   <span className="detail-label">Current Task:</span>
@@ -148,10 +145,10 @@ export default function AgentsPage() {
           ))}
         </div>
       )}
-      
+
       <div className="card" style={{ marginTop: '20px' }}>
         <div className="card-header">System Overview</div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '16px' }}>
+        <div className="metric-grid">
           <div className="metric">
             <div className="metric-value">
               {Object.values(agents).filter(a => a.status === 'working').length}
