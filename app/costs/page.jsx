@@ -25,6 +25,8 @@ export default function CostsPage() {
   const entries = data?.entries ?? [];
 
   const alertLevel = monthlyTotal > 50 ? "red" : monthlyTotal > 20 ? "yellow" : "green";
+  const dailyPointCount = daily.length;
+  const hasEnoughDataForChart = dailyPointCount >= 2;
   const maxY = Math.max(0.01, ...daily.map(d => d.total));
   const chartPoints = daily.slice().reverse().map((d, i, arr) => {
     const x = arr.length <= 1 ? 300 : (i / (arr.length - 1)) * 580 + 10;
@@ -69,7 +71,7 @@ export default function CostsPage() {
         <div className="card">
           <div className="card-header">Spend Over Time</div>
           <div className="chart-container">
-            {daily.length > 0 ? (
+            {hasEnoughDataForChart ? (
               <svg width="100%" height="160" viewBox="0 0 600 160" preserveAspectRatio="none">
                 <defs>
                   <linearGradient id="fillGrad" x1="0" y1="0" x2="0" y2="1">
@@ -78,20 +80,20 @@ export default function CostsPage() {
                   </linearGradient>
                 </defs>
                 <line x1="10" y1="150" x2="590" y2="150" stroke="var(--border)" strokeWidth="1"/>
-                {daily.length > 1 && (
-                  <>
-                    <polygon fill="url(#fillGrad)" points={`10,150 ${chartPoints} 590,150`}/>
-                    <polyline fill="none" stroke="var(--accent)" strokeWidth="2" points={chartPoints}/>
-                  </>
-                )}
+                <>
+                  <polygon fill="url(#fillGrad)" points={`10,150 ${chartPoints} 590,150`}/>
+                  <polyline fill="none" stroke="var(--accent)" strokeWidth="2" points={chartPoints}/>
+                </>
                 {daily.slice().reverse().map((d, i, arr) => {
                   const x = arr.length <= 1 ? 300 : (i / (arr.length - 1)) * 580 + 10;
                   const y = 140 - (d.total / maxY) * 120 + 10;
                   return <circle key={i} cx={x} cy={y} r="3" fill="var(--accent)"/>;
                 })}
               </svg>
+            ) : dailyPointCount === 1 ? (
+              <div className="empty">Add more cost data to see trends</div>
             ) : (
-              <div className="empty">No cost data yet. Costs are logged as Fletcher makes API calls.</div>
+              <div className="empty">No cost data available</div>
             )}
           </div>
         </div>
