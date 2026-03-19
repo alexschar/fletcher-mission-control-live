@@ -1,12 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 export default function Login() {
   const [token, setToken] = useState('');
   const [error, setError] = useState('');
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get('redirect') || '/agents';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -28,19 +30,28 @@ export default function Login() {
       if (response.ok) {
         // Token is valid - store it
         localStorage.setItem('mc_auth_token', token);
-        router.push('/agents');
+        if (!localStorage.getItem('mc_actor')) {
+          localStorage.setItem('mc_actor', 'sawyer');
+        }
+        router.push(redirectTo);
       } else if (response.status === 401) {
         setError('Invalid token. Please check and try again.');
       } else {
         // For other errors (like health being down), still allow login
         // This allows the user to proceed even if health check fails
         localStorage.setItem('mc_auth_token', token);
-        router.push('/agents');
+        if (!localStorage.getItem('mc_actor')) {
+          localStorage.setItem('mc_actor', 'sawyer');
+        }
+        router.push(redirectTo);
       }
     } catch (err) {
       // Network error - still allow login attempt
       localStorage.setItem('mc_auth_token', token);
-      router.push('/agents');
+      if (!localStorage.getItem('mc_actor')) {
+        localStorage.setItem('mc_actor', 'sawyer');
+      }
+      router.push(redirectTo);
     }
   };
 
