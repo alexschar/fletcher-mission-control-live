@@ -123,7 +123,7 @@ verify_reports() {
   report_id="$(node -e 'const data=JSON.parse(process.argv[1]); if(!Array.isArray(data)||!data[0]?.id){console.error("No reports found"); process.exit(1)} console.log(data[0].id)' "$reports")"
   before="$(api "$BASE_URL/api/reports/$report_id/addendums")"
   assert_json_array "$before"
-  unique_note="Verification addendum $SHORT_HASH $(date +%s)"
+  unique_note="verification-addendum-$SHORT_HASH-$(date +%s)"
   post="$(api -X POST "$BASE_URL/api/reports/$report_id/addendums" -H 'Content-Type: application/json' --data '{"content":"'$unique_note'"}')"
   node -e 'const item=JSON.parse(process.argv[1]); if(!item?.id || item.content !== process.argv[2]){console.error("Addendum POST failed");process.exit(1)} console.log("✅ Addendum POST verified")' "$post" "$unique_note"
   after="$(api "$BASE_URL/api/reports/$report_id/addendums")"
