@@ -1,41 +1,30 @@
-"use client";
-import { useState, useEffect } from "react";
-import { getAuthHeaders, isAuthenticated, logout } from "../../lib/api-client";
-import { useRouter } from "next/navigation";
-
-export default function AgentsPage() {
-  const [agents, setAgents] = useState({});
-  const [loading, setLoading] = useState(true);
-  const [lastUpdate, setLastUpdate] = useState(null);
-  const router = useRouter();
-
-  const fetchAgentData = async () => {
-    try {
-      const response = await fetch("/api/agents", { headers: getAuthHeaders() });
-      if (response.status === 401) {
-        logout();
-        router.push('/login');
-        return;
-      }
-      const data = await response.json();
-      setAgents(data);
-      setLastUpdate(new Date().toISOString());
-      setLoading(false);
-    } catch (error) {
-      console.error('Failed to fetch agent data:', error);
-      setLoading(false);
+// Server-side data fetching
+async function getAgentsData() {
+  try {
+    const response = await fetch('http://localhost:3000/api/agents', {
+      headers: {
+        'Authorization': 'Bearer mc_test_token_12345',
+        'Content-Type': 'application/json'
+      },
+      cache: 'no-store' // Ensure fresh data
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
-  };
+    
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching agents:', error);
+    return {};
+  }
+}
 
-  useEffect(() => {
-    if (!isAuthenticated()) {
-      router.push('/login');
-      return;
-    }
-    fetchAgentData();
-    const interval = setInterval(fetchAgentData, 30000);
-    return () => clearInterval(interval);
-  }, []);
+export default async function AgentsPage() {
+  const agents = await getAgentsData();
+  const loading = false;
+  const lastUpdate = new Date().toISOString();
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -78,7 +67,6 @@ export default function AgentsPage() {
         {lastUpdate && (
           <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '8px' }}>
             Last updated: {new Date(lastUpdate).toLocaleTimeString()}
-            {' • '}Auto-refresh every 30s
           </p>
         )}
       </div>
