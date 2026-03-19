@@ -1,5 +1,37 @@
 [
-  {"id":"1","name":"Heartbeat Check","schedule":"Every 120m","description":"Project status, drift detection, energy assessment","status":"active","lastRun":null,"created":"2026-03-14T00:00:00Z"},
-  {"id":"2","name":"Morning Brief","schedule":"7:00 AM Central","description":"Daily priorities, project status, weather, news","status":"active","lastRun":null,"created":"2026-03-14T00:00:00Z"},
-  {"id":"3","name":"End of Day Log","schedule":"10:00 PM Central","description":"Write daily memory, cost summary, open loops","status":"active","lastRun":null,"created":"2026-03-14T00:00:00Z"}
+  {
+    "id": "1",
+    "name": "Heartbeat Check",
+    "schedule": "Every 120m",
+    "description": "Project status, drift detection, energy assessment",
+    "status": "active",
+    "lastRun": null,
+    "created": "2026-03-14T00:00:00Z"
+  },
+  {
+    "id": "2",
+    "name": "Morning Brief",
+    "schedule": "7:00 AM Central",
+    "description": "Daily priorities, project status, weather, news",
+    "status": "active",
+    "lastRun": null,
+    "created": "2026-03-14T00:00:00Z"
+  },
+  {
+    "id": "3",
+    "name": "End of Day Log",
+    "schedule": "10:00 PM Central",
+    "description": "Write daily memory, cost summary, open loops",
+    "status": "active",
+    "lastRun": null,
+    "created": "2026-03-14T00:00:00Z"
+  },
+  {
+    "name": "Test Schedule",
+    "schedule": "0 9 * * *",
+    "description": "Test",
+    "status": "active",
+    "id": "1773928570886",
+    "created": "2026-03-19T13:56:10.886Z"
+  }
 ]
