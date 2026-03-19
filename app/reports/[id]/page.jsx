@@ -4,6 +4,7 @@ import { getAuthHeaders, getCurrentActor, isAuthenticated, logout } from "../../
 import ClientTimestamp from "../../components/ClientTimestamp";
 import { markReportAuditViewed } from "../../../lib/notifications";
 import { useParams, useRouter } from "next/navigation";
+import { useToast } from "../../components/ToastProvider";
 
 const FIELDS = [
   ['goal', 'Goal'],
@@ -33,6 +34,7 @@ export default function ReportDetailPage() {
   const params = useParams();
   const router = useRouter();
   const actor = useMemo(() => getCurrentActor(), []);
+  const toast = useToast();
   const [report, setReport] = useState(null);
   const [form, setForm] = useState(null);
   const [audit, setAudit] = useState(null);
@@ -50,7 +52,7 @@ export default function ReportDetailPage() {
     }
     const data = await res.json();
     if (!res.ok) {
-      alert(data.error || 'Failed to load report');
+      toast.error(data.error || 'Failed to load report');
       return;
     }
     setReport(data);
@@ -114,8 +116,12 @@ export default function ReportDetailPage() {
       body: JSON.stringify({ content: addendum }),
     });
     const data = await res.json();
-    if (!res.ok) return alert(data.error || 'Failed to add addendum');
+    if (!res.ok) {
+      toast.error(data.error || 'Failed to add addendum');
+      return;
+    }
     setAddendum('');
+    toast.success('Addendum added');
     await loadReport();
   }
 
@@ -126,8 +132,12 @@ export default function ReportDetailPage() {
       body: JSON.stringify(auditDraft),
     });
     const data = await res.json();
-    if (!res.ok) return alert(data.error || 'Failed to save audit');
+    if (!res.ok) {
+      toast.error(data.error || 'Failed to save audit');
+      return;
+    }
     setAudit(data);
+    toast.success('Audit saved');
   }
 
   return (

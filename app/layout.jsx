@@ -1,6 +1,8 @@
 import './globals.css';
 import Sidebar from './components/Sidebar';
 import AppErrorBoundary from './components/AppErrorBoundary';
+import { ToastProvider } from './components/ToastProvider';
+import { ConfirmProvider } from './components/ConfirmProvider';
 
 export const metadata = {
   title: 'Fletcher — Mission Control',
@@ -12,12 +14,16 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body>
         <AppErrorBoundary>
-          <div className="layout">
-            <Sidebar />
-            <main className="main">
-              {children}
-            </main>
-          </div>
+          <ToastProvider>
+            <ConfirmProvider>
+              <div className="layout">
+                <Sidebar />
+                <main className="main">
+                  {children}
+                </main>
+              </div>
+            </ConfirmProvider>
+          </ToastProvider>
         </AppErrorBoundary>
       </body>
     </html>

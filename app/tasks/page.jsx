@@ -2,6 +2,8 @@
 import { useState, useEffect } from "react";
 import { getAuthHeaders, isAuthenticated, logout } from "../../lib/api-client";
 import { useRouter } from "next/navigation";
+import { useToast } from "../components/ToastProvider";
+import { useConfirm } from "../components/ConfirmProvider";
 
 const COLUMNS = [
   { id: "backlog", label: "Backlog", color: "var(--text-muted)" },
@@ -153,6 +155,8 @@ export default function TasksPage() {
   const [titleError, setTitleError] = useState("");
   const [adding, setAdding] = useState(false);
   const router = useRouter();
+  const toast = useToast();
+  const { confirm } = useConfirm();
 
   useEffect(() => {
     if (!isAuthenticated()) {
@@ -189,11 +193,16 @@ export default function TasksPage() {
       return;
     }
     const updated = await res.json();
+    if (!res.ok) {
+      toast.error(`Failed to create task: ${updated.error || 'Unknown error'}`);
+      return;
+    }
     setTasks(current => normalizeTasksResponse(updated, current));
     setNewTitle("");
     setNewDesc("");
     setTitleError("");
     setAdding(false);
+    toast.success("Task created");
   }
 
   async function moveTask(id, newStatus) {
@@ -208,14 +217,30 @@ export default function TasksPage() {
       return;
     }
     const updated = await res.json();
+    if (!res.ok) {
+      toast.error(`Failed to move task: ${updated.error || 'Unknown error'}`);
+      return;
+    }
     setTasks(current => normalizeTasksResponse(updated, current));
+    const statusLabel = String(newStatus || '').replaceAll('_', ' ').replace(/\b\w/g, (char) => char.toUpperCase());
+    toast.success(`Task moved to ${statusLabel}`);
   }
 
-  async function removeTask(id) {
+  async function removeTask(task) {
+    const approved = await confirm({
+      title: `Remove task: ${task.title}?`,
+      message: 'This will permanently remove the task from the board.',
+      confirmLabel: 'Remove task',
+      cancelLabel: 'Cancel',
+      tone: 'danger',
+    });
+
+    if (!approved) return;
+
     const res = await fetch("/api/tasks", {
       method: "POST",
       headers: getAuthHeaders(),
-      body: JSON.stringify({ action: "delete", id })
+      body: JSON.stringify({ action: "delete", id: task.id })
     });
     if (res.status === 401) {
       logout();
@@ -223,7 +248,12 @@ export default function TasksPage() {
       return;
     }
     const updated = await res.json();
-    setTasks(current => normalizeTasksResponse(updated, current.filter(task => task.id !== id)));
+    if (!res.ok) {
+      toast.error(`Failed to remove task: ${updated.error || 'Unknown error'}`);
+      return;
+    }
+    setTasks(current => normalizeTasksResponse(updated, current.filter(currentTask => currentTask.id !== task.id)));
+    toast.success(`Removed task: ${task.title}`);
   }
 
   return (
@@ -307,7 +337,7 @@ export default function TasksPage() {
                       <button className="btn btn-sm" onClick={() => moveTask(task.id, nextCol.id)}>{nextCol.label} →</button>
                     )}
                     {col.id === "done" && (
-                      <button className="btn btn-sm" style={{ color: "var(--red)" }} onClick={() => removeTask(task.id)}>Remove</button>
+                      <button className="btn btn-sm" style={{ color: "var(--red)" }} onClick={() => removeTask(task)}>Remove</button>
                     )}
                   </div>
                 </div>

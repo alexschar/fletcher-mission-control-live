@@ -5,6 +5,7 @@ import ClientTimestamp from "../components/ClientTimestamp";
 import { getAuthHeaders, isAuthenticated, logout, getCurrentActor } from "../../lib/api-client";
 import { getReportNotifications, hasNewAudit, isNewReport, markReportsListViewed } from "../../lib/notifications";
 import { useRouter } from "next/navigation";
+import { useToast } from "../components/ToastProvider";
 
 function statusTone(status) {
   return status === 'submitted' ? 'badge-green' : 'badge-yellow';
@@ -19,6 +20,7 @@ export default function ReportsPage() {
   const [notifications, setNotifications] = useState({ newReportsCount: 0, reportsWithNewAudits: [], totalCount: 0 });
   const router = useRouter();
   const actor = useMemo(() => getCurrentActor(), []);
+  const toast = useToast();
 
   async function loadReports() {
     setLoading(true);
@@ -53,11 +55,12 @@ export default function ReportsPage() {
     });
     const data = await res.json();
     if (!res.ok) {
-      alert(data.error || 'Failed to create report');
+      toast.error(data.error || 'Failed to create report');
       return;
     }
     setCreating(false);
     setForm({ title: '', goal: '', summary: '' });
+    toast.success('Report submitted');
     router.push(`/reports/${data.id}`);
   }
 

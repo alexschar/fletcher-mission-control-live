@@ -2,7 +2,7 @@
 set -euo pipefail
 
 if [[ $# -lt 1 ]]; then
-  echo "Usage: bash scripts/deploy-verify.sh /tasks|/schedule|/reports|/app"
+  echo "Usage: bash scripts/deploy-verify.sh /|/agents|/tasks|/schedule|/reports|/app"
   exit 1
 fi
 
@@ -99,6 +99,16 @@ verify_tasks() {
   node -e 'const data=JSON.parse(process.argv[1]); if(data.some(t=>String(t.id)===process.argv[2])){console.error("Task delete failed");process.exit(1)} console.log("✅ Delete verified")' "$deleted" "$id"
 }
 
+verify_agents() {
+  echo "── Verifying /agents and activity timeline ──"
+  assert_page_ok "$BASE_URL/agents"
+  local agents agent_id timeline_code
+  agents="$(api "$BASE_URL/api/agents")"
+  agent_id="$(node -e 'const data=JSON.parse(process.argv[1]); const ids=Object.values(data||{}).map(x=>x.id).filter(Boolean); if(!ids.length){process.exit(1)} console.log(ids[0])' "$agents")"
+  assert_page_ok "$BASE_URL/agents/$agent_id/activity"
+  echo "✅ Activity timeline route verified for agent: $agent_id"
+}
+
 verify_schedule() {
   echo "── Verifying /schedule ──"
   assert_page_ok "$BASE_URL/schedule"
@@ -144,6 +154,9 @@ verify_error_boundaries() {
 
 for PAGE in "$@"; do
   case "$PAGE" in
+    /agents)
+      verify_agents
+      ;;
     /tasks)
       verify_tasks
       ;;

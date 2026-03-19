@@ -1,44 +1,10 @@
-// Server-side data fetching
-async function getAgentsData() {
-  try {
-    // Use production URL for Vercel deployment, localhost for dev
-    const baseUrl = process.env.VERCEL_URL 
-      ? `https://${process.env.VERCEL_URL}` 
-      : 'http://localhost:3000';
-    
-    console.log('Fetching from:', baseUrl); // Debug
-    console.log('VERCEL_URL:', process.env.VERCEL_URL); // Debug
-    
-    const response = await fetch(`${baseUrl}/api/agents`, {
-      headers: {
-        'Authorization': 'Bearer mc_test_token_12345',
-        'Content-Type': 'application/json'
-      },
-      cache: 'no-store' // Ensure fresh data
-    });
-    
-    console.log('Response status:', response.status); // Debug
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    console.log('Agent data received:', Object.keys(data)); // Debug
-    return data;
-  } catch (error) {
-    console.error('Error fetching agents:', error);
-    // Fallback: return hardcoded data for production testing
-    return {
-      fletcher: { name: "Fletcher", id: "main", status: "idle", role: "Policy authority" },
-      sawyer: { name: "Sawyer", id: "sawyer", status: "offline", role: "Daily operator" },
-      celeste: { name: "Celeste", id: "celeste", status: "offline", role: "Builder" }
-    };
-  }
-}
+import Link from 'next/link';
+const { getAllAgentStatuses } = require('../../lib/store');
+
+export const dynamic = 'force-dynamic';
 
 export default async function AgentsPage() {
-  const agents = await getAgentsData();
+  const agents = await getAllAgentStatuses();
   const loading = false;
   const lastUpdate = new Date().toISOString();
 
@@ -144,6 +110,9 @@ export default async function AgentsPage() {
                     {agent.id}
                   </span>
                 </div>
+              </div>
+              <div style={{ marginTop: '16px' }}>
+                <Link className="btn btn-sm" href={`/agents/${agent.id}/activity`}>View activity timeline</Link>
               </div>
             </div>
           ))}

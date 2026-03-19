@@ -6,6 +6,7 @@ import ContentList from "../../components/content/ContentList";
 import ContentDetail from "../../components/content/ContentDetail";
 import AddContentModal from "../../components/content/AddContentModal";
 import { getAuthHeaders, getAuthToken, isAuthenticated, logout } from "../../lib/api-client";
+import { useToast } from "../components/ToastProvider";
 
 export default function ContentPage() {
   const router = useRouter();
@@ -18,6 +19,7 @@ export default function ContentPage() {
   const [processedFilter, setProcessedFilter] = useState("all");
   const [selectedItem, setSelectedItem] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const toast = useToast();
 
   useEffect(() => {
     if (!isAuthenticated()) {
@@ -104,8 +106,10 @@ export default function ContentPage() {
       if (!updated) return;
       setItems((current) => current.map((item) => (item.id === id ? updated : item)));
       if (selectedItem?.id === id) setSelectedItem(updated);
+      toast.success(`Content ${checked ? 'marked processed' : 'marked unprocessed'}`);
     } catch (err) {
       setError(err.message || "Failed to update content drop");
+      toast.error(err.message || 'Failed to update content drop');
     }
   }
 
@@ -119,6 +123,7 @@ export default function ContentPage() {
       setItems((current) => current.filter((item) => item.id !== updated.id));
       setSelectedItem(updated);
     }
+    toast.success('Content drop updated');
   }
 
   async function handleAddContent(payload) {
@@ -140,6 +145,7 @@ export default function ContentPage() {
     setItems((current) => [data, ...current]);
     setShowAddModal(false);
     setActiveTab("inbox");
+    toast.success('Content drop created');
   }
 
   return (

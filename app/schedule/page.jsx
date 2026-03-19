@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { getAuthHeaders, isAuthenticated, logout } from "../../lib/api-client";
 import ClientTimestamp from "../components/ClientTimestamp";
 import { useRouter } from "next/navigation";
+import { useToast } from "../components/ToastProvider";
 
 function normalizeScheduleResponse(data, previous = []) {
   if (Array.isArray(data)) return data;
@@ -18,6 +19,7 @@ export default function SchedulePage() {
   const [adding, setAdding] = useState(false);
   const [form, setForm] = useState({ name: "", schedule: "", description: "" });
   const router = useRouter();
+  const toast = useToast();
 
   useEffect(() => {
     if (!isAuthenticated()) {
@@ -44,9 +46,14 @@ export default function SchedulePage() {
       return;
     }
     const updated = await res.json();
+    if (!res.ok) {
+      toast.error(updated.error || 'Failed to add job');
+      return;
+    }
     setItems(current => normalizeScheduleResponse(updated, current));
     setForm({ name: "", schedule: "", description: "" });
     setAdding(false);
+    toast.success('Scheduled job added');
   }
 
   async function toggleItem(id, currentStatus) {
@@ -61,7 +68,12 @@ export default function SchedulePage() {
       return;
     }
     const updated = await res.json();
+    if (!res.ok) {
+      toast.error(updated.error || 'Failed to update job');
+      return;
+    }
     setItems(current => normalizeScheduleResponse(updated, current));
+    toast.success(`Job ${currentStatus === "active" ? "paused" : "resumed"}`);
   }
 
   // Seed with defaults if empty

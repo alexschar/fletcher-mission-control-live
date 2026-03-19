@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { getAuthHeaders, isAuthenticated, logout } from "../../lib/api-client";
 import { useRouter } from "next/navigation";
+import { useToast } from "../components/ToastProvider";
 
 const AGENTS = [
   { key: "sawyer", label: "Sawyer" },
@@ -114,6 +115,7 @@ export default function HealthPage() {
   const [loading, setLoading] = useState(true);
   const [runningAgent, setRunningAgent] = useState(null);
   const router = useRouter();
+  const toast = useToast();
 
   async function loadHealth() {
     try {
@@ -152,7 +154,12 @@ export default function HealthPage() {
         return;
       }
       const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || 'Failed to run health audit');
+        return;
+      }
       setHealthData(data || {});
+      toast.success('Health audit completed');
     } finally {
       setRunningAgent(null);
     }

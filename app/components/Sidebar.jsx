@@ -5,6 +5,7 @@ import { getAuthHeaders } from "../../lib/api-client";
 import { getReportNotifications, subscribeToNotificationChanges } from "../../lib/notifications";
 
 const NAV_ITEMS = [
+  { href: "/", label: "Dashboard" },
   { href: "/agents", label: "Agents" },
   { href: "/costs", label: "Costs" },
   { href: "/tasks", label: "Tasks" },
