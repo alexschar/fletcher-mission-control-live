@@ -1,7 +1,12 @@
 // Server-side data fetching
 async function getAgentsData() {
   try {
-    const response = await fetch('http://localhost:3000/api/agents', {
+    // Use production URL for Vercel deployment, localhost for dev
+    const baseUrl = process.env.VERCEL_URL 
+      ? `https://${process.env.VERCEL_URL}` 
+      : 'http://localhost:3000';
+    
+    const response = await fetch(`${baseUrl}/api/agents`, {
       headers: {
         'Authorization': 'Bearer mc_test_token_12345',
         'Content-Type': 'application/json'
