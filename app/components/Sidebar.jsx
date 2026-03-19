@@ -76,6 +76,7 @@ export default function Sidebar() {
         <a href="/agents" className="sidebar-link">Agents</a>
         <a href="/costs" className="sidebar-link">Costs</a>
         <a href="/tasks" className="sidebar-link">Tasks</a>
+        <a href="/content" className="sidebar-link">Content</a>
         <a href="/reports" className="sidebar-link">
           Reports
           {reportNotificationCount > 0 && <span className="sidebar-notification-badge">{reportNotificationCount}</span>}
