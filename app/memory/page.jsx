@@ -63,19 +63,19 @@ export default function MemoryPage() {
         <p>Browse Fletcher's workspace and memory files</p>
       </div>
 
-      <div className="search-bar" style={{ display: 'flex', gap: 12 }}>
-        <input
-          className="input"
-          placeholder="Search files and content..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          style={{ flex: 1 }}
-        />
+      <div className="search-bar form-inline">
+        <div className="form-field-grow">
+          <input
+            className="input"
+            placeholder="Search files and content..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+        </div>
         <select 
           className="input" 
           value={agentFilter} 
           onChange={e => setAgentFilter(e.target.value)}
-          style={{ width: 150 }}
         >
           {AGENTS.map(a => (
             <option key={a.id} value={a.id}>{a.label}</option>

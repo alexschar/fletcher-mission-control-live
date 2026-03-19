@@ -66,20 +66,24 @@ export default function ReportsPage() {
 
   return (
     <div>
-      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'flex-start' }}>
-        <div>
-          <h1>Reports</h1>
-          <p>Operational reports for Alex, Fletcher, and Sawyer.</p>
-          <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 8 }}>Viewing as {actor.charAt(0).toUpperCase() + actor.slice(1)}</p>
-          {notifications.totalCount > 0 && (
-            <p style={{ fontSize: 12, color: 'var(--red)', marginTop: 8 }}>
-              {notifications.newReportsCount > 0 ? `${notifications.newReportsCount} new report${notifications.newReportsCount === 1 ? '' : 's'}` : null}
-              {notifications.newReportsCount > 0 && notifications.reportsWithNewAudits.length > 0 ? ' • ' : null}
-              {notifications.reportsWithNewAudits.length > 0 ? `${notifications.reportsWithNewAudits.length} audit update${notifications.reportsWithNewAudits.length === 1 ? '' : 's'}` : null}
-            </p>
-          )}
+      <div className="page-header">
+        <div className="page-header-row">
+          <div>
+            <h1>Reports</h1>
+            <p>Operational reports for Alex, Fletcher, and Sawyer.</p>
+            <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 8 }}>Viewing as {actor.charAt(0).toUpperCase() + actor.slice(1)}</p>
+            {notifications.totalCount > 0 && (
+              <p style={{ fontSize: 12, color: 'var(--red)', marginTop: 8 }}>
+                {notifications.newReportsCount > 0 ? `${notifications.newReportsCount} new report${notifications.newReportsCount === 1 ? '' : 's'}` : null}
+                {notifications.newReportsCount > 0 && notifications.reportsWithNewAudits.length > 0 ? ' • ' : null}
+                {notifications.reportsWithNewAudits.length > 0 ? `${notifications.reportsWithNewAudits.length} audit update${notifications.reportsWithNewAudits.length === 1 ? '' : 's'}` : null}
+              </p>
+            )}
+          </div>
+          <div className="page-header-actions">
+            <button className="btn btn-primary" onClick={() => setCreating(v => !v)}>{creating ? 'Cancel' : '+ New Report'}</button>
+          </div>
         </div>
-        <button className="btn btn-primary" onClick={() => setCreating(v => !v)}>{creating ? 'Cancel' : '+ New Report'}</button>
       </div>
 
       {creating && (
@@ -93,11 +97,11 @@ export default function ReportsPage() {
               <label className="field-label">Goal</label>
               <input className="input" value={form.goal} onChange={(e) => setForm({ ...form, goal: e.target.value })} />
             </div>
-            <div style={{ gridColumn: '1 / -1' }}>
+            <div className="content-form-field-full">
               <label className="field-label">Summary</label>
               <textarea className="textarea" rows={4} value={form.summary} onChange={(e) => setForm({ ...form, summary: e.target.value })} />
             </div>
-            <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'flex-end' }}>
+            <div className="content-panel-actions content-form-actions">
               <button type="submit" className="btn btn-primary">Create Report</button>
             </div>
           </form>

@@ -153,12 +153,16 @@ export default function ContentPage() {
 
   return (
     <div>
-      <div className="page-header content-header" style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "flex-start" }}>
-        <div>
-          <h1>Content Hub</h1>
-          <p>Review inbound content drops and manually add new ones.</p>
+      <div className="page-header">
+        <div className="page-header-row content-header">
+          <div>
+            <h1>Content Hub</h1>
+            <p>Review inbound content drops and manually add new ones.</p>
+          </div>
+          <div className="page-header-actions">
+            <button className="btn btn-primary" onClick={() => setShowAddModal(true)}>Add Content</button>
+          </div>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowAddModal(true)}>Add Content</button>
       </div>
 
       {error ? <div className="card content-error-banner">{error}</div> : null}
@@ -175,7 +179,7 @@ export default function ContentPage() {
       {activeTab === "all" ? (
         <div className="card" style={{ marginBottom: 16 }}>
           <div className="filters-row">
-            <div className="filter-group" style={{ minWidth: 260 }}>
+            <div className="filter-group">
               <label>Search</label>
               <input className="input" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Search title, content, summary" />
             </div>

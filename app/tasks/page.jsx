@@ -147,27 +147,31 @@ export default function TasksPage() {
 
   return (
     <div>
-      <div className="page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-        <div>
-          <h1>Task Board</h1>
-          <p>Kanban-style task management</p>
+      <div className="page-header">
+        <div className="page-header-row">
+          <div>
+            <h1>Task Board</h1>
+            <p>Kanban-style task management</p>
+          </div>
+          <div className="page-header-actions">
+            <button className="btn btn-primary" onClick={() => setAdding(!adding)}>
+              {adding ? "Cancel" : "+ New Task"}
+            </button>
+          </div>
         </div>
-        <button className="btn btn-primary" onClick={() => setAdding(!adding)}>
-          {adding ? "Cancel" : "+ New Task"}
-        </button>
       </div>
 
       <StatusCard />
 
       {adding && (
         <div className="card" style={{ marginBottom: 20 }}>
-          <form onSubmit={addTask} style={{ display: "flex", gap: 12, alignItems: "flex-end" }}>
-            <div style={{ flex: 2 }}>
-              <label style={{ fontSize: 12, color: "var(--text-muted)", display: "block", marginBottom: 4 }}>Title</label>
+          <form onSubmit={addTask} className="form-inline">
+            <div className="form-field-grow-2">
+              <label className="field-label">Title</label>
               <input className="input" value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="Task title" autoFocus />
             </div>
-            <div style={{ flex: 3 }}>
-              <label style={{ fontSize: 12, color: "var(--text-muted)", display: "block", marginBottom: 4 }}>Description</label>
+            <div className="form-field-grow-3">
+              <label className="field-label">Description</label>
               <input className="input" value={newDesc} onChange={e => setNewDesc(e.target.value)} placeholder="Optional description" />
             </div>
             <button type="submit" className="btn btn-primary">Add</button>
@@ -194,7 +198,7 @@ export default function TasksPage() {
                 <div key={task.id} className="kanban-card">
                   <h4>{task.title}</h4>
                   {task.description && <p>{task.description}</p>}
-                  <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+                  <div className="kanban-card-actions">
                     {prevCol && (
                       <button className="btn btn-sm" onClick={() => moveTask(task.id, prevCol.id)}>← {prevCol.label}</button>
                     )}

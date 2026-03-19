@@ -63,29 +63,33 @@ export default function SchedulePage() {
 
   return (
     <div>
-      <div className="page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-        <div>
-          <h1>Scheduled Jobs</h1>
-          <p>Recurring tasks and cron jobs</p>
+      <div className="page-header">
+        <div className="page-header-row">
+          <div>
+            <h1>Scheduled Jobs</h1>
+            <p>Recurring tasks and cron jobs</p>
+          </div>
+          <div className="page-header-actions">
+            <button className="btn btn-primary" onClick={() => setAdding(!adding)}>
+              {adding ? "Cancel" : "+ New Job"}
+            </button>
+          </div>
         </div>
-        <button className="btn btn-primary" onClick={() => setAdding(!adding)}>
-          {adding ? "Cancel" : "+ New Job"}
-        </button>
       </div>
 
       {adding && (
         <div className="card" style={{ marginBottom: 20 }}>
-          <form onSubmit={addItem} style={{ display: "flex", gap: 12, alignItems: "flex-end" }}>
-            <div style={{ flex: 2 }}>
-              <label style={{ fontSize: 12, color: "var(--text-muted)", display: "block", marginBottom: 4 }}>Name</label>
+          <form onSubmit={addItem} className="form-inline">
+            <div className="form-field-grow-2">
+              <label className="field-label">Name</label>
               <input className="input" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Job name" autoFocus />
             </div>
-            <div style={{ flex: 1 }}>
-              <label style={{ fontSize: 12, color: "var(--text-muted)", display: "block", marginBottom: 4 }}>Schedule</label>
+            <div className="form-field-grow">
+              <label className="field-label">Schedule</label>
               <input className="input" value={form.schedule} onChange={e => setForm({ ...form, schedule: e.target.value })} placeholder="e.g. Every 2h" />
             </div>
-            <div style={{ flex: 2 }}>
-              <label style={{ fontSize: 12, color: "var(--text-muted)", display: "block", marginBottom: 4 }}>Description</label>
+            <div className="form-field-grow-2">
+              <label className="field-label">Description</label>
               <input className="input" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="What does this job do?" />
             </div>
             <button type="submit" className="btn btn-primary">Add</button>
@@ -93,27 +97,27 @@ export default function SchedulePage() {
         </div>
       )}
 
-      <div>
+      <div className="schedule-list">
         {displayItems.map(item => (
           <div key={item.id} className="schedule-item">
-            <div style={{ flex: 1 }}>
+            <div className="schedule-item-main">
               <div className="schedule-name">{item.name}</div>
               {item.description && <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>{item.description}</p>}
             </div>
-            <div style={{ textAlign: "center", minWidth: 120 }}>
+            <div className="schedule-item-meta">
               <div className="schedule-cron">{item.schedule}</div>
             </div>
-            <div style={{ textAlign: "center", minWidth: 100 }}>
+            <div className="schedule-item-status">
               <span className={`badge ${item.status === "active" ? "badge-green" : "badge-yellow"}`}>
                 {item.status === "active" ? "Active" : "Paused"}
               </span>
             </div>
-            <div style={{ textAlign: "right", minWidth: 100 }}>
+            <div className="schedule-item-last">
               <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
                 {item.lastRun ? `Last: ${new Date(item.lastRun).toLocaleString()}` : "Never run"}
               </div>
             </div>
-            <button className="btn btn-sm" style={{ marginLeft: 12 }} onClick={() => toggleItem(item.id, item.status)}>
+            <button className="btn btn-sm" onClick={() => toggleItem(item.id, item.status)}>
               {item.status === "active" ? "Pause" : "Resume"}
             </button>
           </div>
