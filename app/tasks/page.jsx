@@ -157,6 +157,7 @@ function StatusCard() {
 
 export default function TasksPage() {
   const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [newTitle, setNewTitle] = useState("");
   const [newDesc, setNewDesc] = useState("");
   const [titleError, setTitleError] = useState("");
