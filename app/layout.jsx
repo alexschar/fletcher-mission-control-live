@@ -4,6 +4,7 @@ import AppErrorBoundary from './components/AppErrorBoundary';
 import { ToastProvider } from './components/ToastProvider';
 import { ConfirmProvider } from './components/ConfirmProvider';
 import AuthGate from './components/AuthGate';
+import { InteractModeProvider } from './components/InteractModeProvider';
 
 export const metadata = {
   title: 'Fletcher — Mission Control',
@@ -17,14 +18,16 @@ export default function RootLayout({ children }) {
         <AppErrorBoundary>
           <ToastProvider>
             <ConfirmProvider>
-              <AuthGate>
-                <div className="layout">
-                  <Sidebar />
-                  <main className="main">
-                    {children}
-                  </main>
-                </div>
-              </AuthGate>
+              <InteractModeProvider>
+                <AuthGate>
+                  <div className="layout">
+                    <Sidebar />
+                    <main className="main">
+                      {children}
+                    </main>
+                  </div>
+                </AuthGate>
+              </InteractModeProvider>
             </ConfirmProvider>
           </ToastProvider>
         </AppErrorBoundary>

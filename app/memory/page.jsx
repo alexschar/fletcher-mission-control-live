@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { getAuthHeaders, isAuthenticated, logout } from "../../lib/api-client";
 import { useRouter } from "next/navigation";
+import { Interactable } from "../components/InteractModeProvider";
 
 const AGENTS = [
   { id: 'all', label: 'All Agents' },
@@ -24,9 +25,7 @@ export default function MemoryPage() {
       router.push('/login');
       return;
     }
-    const url = agentFilter === 'all' 
-      ? "/api/memory" 
-      : `/api/memory?agent=${agentFilter}`;
+    const url = agentFilter === 'all' ? "/api/memory" : `/api/memory?agent=${agentFilter}`;
     fetch(url, { headers: getAuthHeaders() })
       .then(r => r.ok ? r.json() : (r.status === 401 ? (logout(), router.push('/login')) : []))
       .then(d => { setFiles(d); setLoading(false); })
@@ -56,6 +55,34 @@ export default function MemoryPage() {
     return new Date(d).toLocaleString();
   }
 
+  function renderFile(file, typeLabel) {
+    return (
+      <Interactable
+        key={file.name}
+        meta={{ type: typeLabel, title: file.name, details: `${file.agent || 'system'} • ${formatSize(file.size)} • ${formatDate(file.updated_at)}`, page: "/memory" }}
+        className="memory-file"
+      >
+        <div className="memory-file-header" onClick={() => toggle(file.name)}>
+          <h3>
+            <span style={{ color: "var(--accent)", marginRight: 8 }}>{expanded[file.name] ? "▼" : "▶"}</span>
+            {file.name}
+            {file.agent && file.agent !== 'system' && (
+              <span style={{ marginLeft: 8, fontSize: 11, color: "var(--text-muted)", textTransform: "lowercase" }}>
+                ({file.agent})
+              </span>
+            )}
+          </h3>
+          <span>{formatSize(file.size)} · {formatDate(file.updated_at)}</span>
+        </div>
+        {expanded[file.name] && (
+          <div className="memory-file-content">
+            {file.content || "(empty)"}
+          </div>
+        )}
+      </Interactable>
+    );
+  }
+
   return (
     <div>
       <div className="page-header">
@@ -63,25 +90,14 @@ export default function MemoryPage() {
         <p>Browse Fletcher's workspace and memory files</p>
       </div>
 
-      <div className="search-bar form-inline">
+      <Interactable meta={{ type: "memory controls", title: "Memory search and filter", details: `Filter ${agentFilter} • Search ${search || 'none'}`, page: "/memory" }} className="search-bar form-inline">
         <div className="form-field-grow">
-          <input
-            className="input"
-            placeholder="Search files and content..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
+          <input className="input" placeholder="Search files and content..." value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-        <select 
-          className="input" 
-          value={agentFilter} 
-          onChange={e => setAgentFilter(e.target.value)}
-        >
-          {AGENTS.map(a => (
-            <option key={a.id} value={a.id}>{a.label}</option>
-          ))}
+        <select className="input" value={agentFilter} onChange={e => setAgentFilter(e.target.value)}>
+          {AGENTS.map(a => <option key={a.id} value={a.id}>{a.label}</option>)}
         </select>
-      </div>
+      </Interactable>
 
       {loading && <div className="empty">Loading memory files...</div>}
 
@@ -93,60 +109,23 @@ export default function MemoryPage() {
           </p>
         </div>
       )}
-      {!loading && filtered.length === 0 && search && (
-        <div className="empty">No files match your search</div>
-      )}
+      {!loading && filtered.length === 0 && search && <div className="empty">No files match your search</div>}
 
       {agentFiles.length > 0 && (
         <div style={{ marginBottom: 24 }}>
           <div style={{ fontSize: 13, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: "var(--text-muted)", marginBottom: 12 }}>
-            Agent Memory Files
-            <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 400 }}>({agentFiles.length})</span>
+            Agent Memory Files <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 400 }}>({agentFiles.length})</span>
           </div>
-          {agentFiles.map(file => (
-            <div key={file.name} className="memory-file">
-              <div className="memory-file-header" onClick={() => toggle(file.name)}>
-                <h3>
-                  <span style={{ color: "var(--accent)", marginRight: 8 }}>{expanded[file.name] ? "▼" : "▶"}</span>
-                  {file.name}
-                  <span style={{ marginLeft: 8, fontSize: 11, color: "var(--text-muted)", textTransform: "lowercase" }}>
-                    ({file.agent})
-                  </span>
-                </h3>
-                <span>{formatSize(file.size)} · {formatDate(file.updated_at)}</span>
-              </div>
-              {expanded[file.name] && (
-                <div className="memory-file-content">
-                  {file.content || "(empty)"}
-                </div>
-              )}
-            </div>
-          ))}
+          {agentFiles.map(file => renderFile(file, "memory item"))}
         </div>
       )}
 
       {systemFiles.length > 0 && (
         <div>
           <div style={{ fontSize: 13, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: "var(--text-muted)", marginBottom: 12 }}>
-            System Files
-            <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 400 }}>({systemFiles.length})</span>
+            System Files <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 400 }}>({systemFiles.length})</span>
           </div>
-          {systemFiles.map(file => (
-            <div key={file.name} className="memory-file">
-              <div className="memory-file-header" onClick={() => toggle(file.name)}>
-                <h3>
-                  <span style={{ color: "var(--accent)", marginRight: 8 }}>{expanded[file.name] ? "▼" : "▶"}</span>
-                  {file.name}
-                </h3>
-                <span>{formatSize(file.size)} · {formatDate(file.updated_at)}</span>
-              </div>
-              {expanded[file.name] && (
-                <div className="memory-file-content">
-                  {file.content || "(empty)"}
-                </div>
-              )}
-            </div>
-          ))}
+          {systemFiles.map(file => renderFile(file, "system memory item"))}
         </div>
       )}
     </div>

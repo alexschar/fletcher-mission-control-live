@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useToast } from "../components/ToastProvider";
 import { useConfirm } from "../components/ConfirmProvider";
 import { TasksBoardSkeleton } from "../components/Skeleton";
+import { Interactable } from "../components/InteractModeProvider";
 
 const COLUMNS = [
   { id: "backlog", label: "Backlog", color: "var(--text-muted)" },
@@ -138,7 +139,10 @@ function StatusCard() {
   const label = agentStatus.charAt(0).toUpperCase() + agentStatus.slice(1);
 
   return (
-    <div className="card status-card">
+    <Interactable
+      meta={{ type: "agent status", title: `${agentName} — ${label}`, details: activeAgent?.currentTask || "No active task", page: "/tasks" }}
+      className="card status-card"
+    >
       <div className="status-card-row">
         <div className="status-card-left">
           <span className={"status-dot " + dotClass} style={{ background: dotColor }}></span>
@@ -151,7 +155,7 @@ function StatusCard() {
         </div>
         <div className="status-timer">{elapsed}</div>
       </div>
-    </div>
+    </Interactable>
   );
 }
 
@@ -300,7 +304,7 @@ export default function TasksPage() {
 
       <StatusCard />
 
-      <div className="card content-filters-card" style={{ marginBottom: 16 }}>
+      <Interactable meta={{ type: "task filters", title: "Task filters", details: `Assignee ${assigneeFilter}, status ${statusFilter}, search ${searchQuery || 'none'}`, page: "/tasks" }} className="card content-filters-card" style={{ marginBottom: 16 }}>
         <div className="filters-row">
           <div className="filter-group" style={{ minWidth: 260 }}>
             <label>Search</label>
@@ -319,10 +323,10 @@ export default function TasksPage() {
             </select>
           </div>
         </div>
-      </div>
+      </Interactable>
 
       {adding && (
-        <div className="card" style={{ marginBottom: 20 }}>
+        <Interactable meta={{ type: "task form", title: "New task form", details: "Create a new task", page: "/tasks" }} className="card" style={{ marginBottom: 20 }}>
           <form onSubmit={addTask} className="form-inline">
             <div className="form-field-grow-2">
               <label className="field-label">Title</label>
@@ -347,7 +351,7 @@ export default function TasksPage() {
             </div>
             <button type="submit" className="btn btn-primary">Add</button>
           </form>
-        </div>
+        </Interactable>
       )}
 
       <div className="results-count">
@@ -368,7 +372,7 @@ export default function TasksPage() {
               </div>
               {colTasks.length === 0 && <div className="empty" style={{ padding: 20, fontSize: 12 }}>No tasks match these filters</div>}
               {colTasks.map(task => (
-                <div key={task.id} className="kanban-card">
+                <Interactable key={task.id} meta={{ type: "task card", title: task.title, details: `${col.label}${task.assigned_to ? ` • ${task.assigned_to}` : ''}${task.description ? ` • ${task.description}` : ''}`, page: "/tasks" }} className="kanban-card">
                   <h4>{task.title}</h4>
                   {task.description && <p>{task.description}</p>}
                   {task.assigned_to && <div className="tag">{task.assigned_to}</div>}
@@ -377,7 +381,7 @@ export default function TasksPage() {
                     {nextCol && <button className="btn btn-sm" onClick={() => moveTask(task.id, nextCol.id)}>{nextCol.label} →</button>}
                     {col.id === "done" && <button className="btn btn-sm" style={{ color: "var(--red)" }} onClick={() => removeTask(task)}>Remove</button>}
                   </div>
-                </div>
+                </Interactable>
               ))}
             </div>
           );

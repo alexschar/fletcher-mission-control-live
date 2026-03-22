@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import ContentPipelineOverview from '../components/dashboard/ContentPipelineOverview';
+import { Interactable } from './components/InteractModeProvider';
 import { getDashboardData } from '../lib/page-data';
 
 function formatCurrency(value) {
@@ -24,19 +25,19 @@ export default async function HomePage() {
       </div>
 
       <div className="dashboard-grid">
-        <section className="card dashboard-card">
+        <Interactable as="section" meta={{ type: 'dashboard card', title: "Today's Spend", details: formatCurrency(data.todaysSpend), page: '/' }} className="card dashboard-card">
           <div className="card-header">Today&apos;s Spend</div>
           <div className="card-value">{formatCurrency(data.todaysSpend)}</div>
           <p className="dashboard-card-note">Live from /api/costs</p>
-        </section>
+        </Interactable>
 
-        <section className="card dashboard-card">
+        <Interactable as="section" meta={{ type: 'dashboard card', title: 'Active Tasks', details: `${data.activeTaskCount} tasks in progress`, page: '/' }} className="card dashboard-card">
           <div className="card-header">Active Tasks</div>
           <div className="card-value">{data.activeTaskCount}</div>
           <p className="dashboard-card-note">Tasks currently in progress</p>
-        </section>
+        </Interactable>
 
-        <section className="card dashboard-card">
+        <Interactable as="section" meta={{ type: 'dashboard card', title: 'Agent Status Summary', details: `${data.agentSummary.working} working • ${data.agentSummary.idle} idle`, page: '/' }} className="card dashboard-card">
           <div className="card-header">Agent Status Summary</div>
           <div className="dashboard-stat-list">
             <div><strong>{data.agentSummary.working}</strong><span>Working</span></div>
@@ -51,15 +52,15 @@ export default async function HomePage() {
               </Link>
             ))}
           </div>
-        </section>
+        </Interactable>
 
-        <section className="card dashboard-card">
+        <Interactable as="section" meta={{ type: 'dashboard card', title: 'Unprocessed Content Drops', details: String(data.unprocessedContentDrops), page: '/' }} className="card dashboard-card">
           <div className="card-header">Unprocessed Content Drops</div>
           <div className="card-value">{data.unprocessedContentDrops}</div>
           <p className="dashboard-card-note">Waiting in the content inbox</p>
-        </section>
+        </Interactable>
 
-        <section className="card dashboard-card">
+        <Interactable as="section" meta={{ type: 'dashboard card', title: 'Recent Health Issues', details: `${data.recentHealthIssues.length} issues`, page: '/' }} className="card dashboard-card">
           <div className="card-header">Recent Health Issues</div>
           {data.recentHealthIssues.length > 0 ? (
             <div className="dashboard-issue-list">
@@ -73,13 +74,13 @@ export default async function HomePage() {
           ) : (
             <div className="dashboard-empty-state">No current health issues.</div>
           )}
-        </section>
+        </Interactable>
 
-        <section className="card dashboard-card">
+        <Interactable as="section" meta={{ type: 'dashboard card', title: 'Pending Reports', details: String(data.pendingReportsCount), page: '/' }} className="card dashboard-card">
           <div className="card-header">Pending Reports</div>
           <div className="card-value">{data.pendingReportsCount}</div>
           <p className="dashboard-card-note">Reports not yet submitted</p>
-        </section>
+        </Interactable>
 
         <ContentPipelineOverview />
       </div>

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { getAuthHeaders, isAuthenticated, logout } from "../../lib/api-client";
 import { useRouter } from "next/navigation";
+import { Interactable } from "../components/InteractModeProvider";
 
 const STATUS_META = {
   active: { label: "Active", className: "badge badge-green" },
@@ -117,22 +118,22 @@ export default function ProjectsPage() {
       </div>
 
       <div className="grid-4">
-        <section className="card dashboard-card">
+        <Interactable as="section" meta={{ type: "project metric", title: "Total Projects", details: String(loading ? 'loading' : counts.total), page: "/projects" }} className="card dashboard-card">
           <div className="card-header">Total Projects</div>
           <div className="card-value">{loading ? "—" : counts.total}</div>
-        </section>
-        <section className="card dashboard-card">
+        </Interactable>
+        <Interactable as="section" meta={{ type: "project metric", title: "Active Projects", details: String(loading ? 'loading' : counts.active), page: "/projects" }} className="card dashboard-card">
           <div className="card-header">Active</div>
           <div className="card-value green">{loading ? "—" : counts.active}</div>
-        </section>
-        <section className="card dashboard-card">
+        </Interactable>
+        <Interactable as="section" meta={{ type: "project metric", title: "Paused Projects", details: String(loading ? 'loading' : counts.paused), page: "/projects" }} className="card dashboard-card">
           <div className="card-header">Paused</div>
           <div className="card-value yellow">{loading ? "—" : counts.paused}</div>
-        </section>
-        <section className="card dashboard-card">
+        </Interactable>
+        <Interactable as="section" meta={{ type: "project metric", title: "Blocked Projects", details: String(loading ? 'loading' : counts.blocked), page: "/projects" }} className="card dashboard-card">
           <div className="card-header">Blocked</div>
           <div className="card-value red">{loading ? "—" : counts.blocked}</div>
-        </section>
+        </Interactable>
       </div>
 
       {loading ? (
@@ -163,7 +164,7 @@ export default function ProjectsPage() {
           {projects.map((project) => {
             const statusMeta = STATUS_META[project.status] || STATUS_META.paused;
             return (
-              <article key={project.id} className="card project-card">
+              <Interactable as="article" key={project.id} meta={{ type: "project card", title: project.project_name, details: `${statusMeta.label} • ${project.last_update} • Updated by ${project.updated_by}`, page: "/projects" }} className="card project-card">
                 <div className="project-card-top">
                   <h2>{project.project_name}</h2>
                   <span className={statusMeta.className}>{statusMeta.label}</span>
@@ -173,7 +174,7 @@ export default function ProjectsPage() {
                   <span>{timeAgo(project.updated_at, now)}</span>
                   <span>Updated by {project.updated_by}</span>
                 </div>
-              </article>
+              </Interactable>
             );
           })}
         </div>

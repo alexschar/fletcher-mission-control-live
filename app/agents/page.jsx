@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Interactable } from '../components/InteractModeProvider';
 const { getAllAgentStatuses } = require('../../lib/store');
 
 export const dynamic = 'force-dynamic';
@@ -58,7 +59,7 @@ export default async function AgentsPage() {
       ) : (
         <div className="grid-1">
           {Object.values(agents).map((agent) => (
-            <div key={agent.id} className="card agent-card">
+            <Interactable key={agent.id} meta={{ type: 'agent card', title: agent.name, details: `${agent.status} • ${agent.currentTask || 'No active task'} • ${agent.id}`, page: '/agents' }} className="card agent-card">
               <div className="agent-header">
                 <div className="agent-info">
                   <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
@@ -114,12 +115,12 @@ export default async function AgentsPage() {
               <div style={{ marginTop: '16px' }}>
                 <Link className="btn btn-sm" href={`/agents/${agent.id}/activity`}>View activity timeline</Link>
               </div>
-            </div>
+            </Interactable>
           ))}
         </div>
       )}
 
-      <div className="card" style={{ marginTop: '20px' }}>
+      <Interactable meta={{ type: 'agent summary', title: 'System Overview', details: `${Object.values(agents).filter(a => a.status === 'working').length} active • ${Object.keys(agents).length} total`, page: '/agents' }} className="card" style={{ marginTop: '20px' }}>
         <div className="card-header">System Overview</div>
         <div className="metric-grid">
           <div className="metric">
@@ -147,7 +148,7 @@ export default async function AgentsPage() {
             <div className="metric-label">Total Agents</div>
           </div>
         </div>
-      </div>
+      </Interactable>
     </div>
   );
 }
