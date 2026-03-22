@@ -80,7 +80,7 @@ export function InteractModeProvider({ children }) {
         throw new Error(payload.error || "Failed to send message");
       }
 
-      toast.success(`Sent to ${payload.targetLabel || targetAgent} via Telegram`);
+      toast.success(`Sent to ${payload.targetLabel || targetAgent}`);
       setDraft("");
     } catch (error) {
       toast.error(error.message || "Failed to send message");
