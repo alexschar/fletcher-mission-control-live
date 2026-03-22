@@ -53,8 +53,8 @@ async function main() {
   console.log('✅ Pending interact message query returned inserted row');
 
   const processed = await markInteractMessageProcessed(created.id);
-  if (!processed || processed.status !== 'processed') {
-    throw new Error('markInteractMessageProcessed() did not set status=processed');
+  if (!processed || processed.status !== 'completed') {
+    throw new Error('markInteractMessageProcessed() did not set status=completed');
   }
   console.log('✅ markInteractMessageProcessed() updated row');
 
@@ -65,7 +65,7 @@ async function main() {
     .maybeSingle();
 
   if (finalError) throw finalError;
-  if (!finalRow || finalRow.status !== 'processed') {
+  if (!finalRow || finalRow.status !== 'completed') {
     throw new Error('Final Supabase row verification failed');
   }
   console.log('✅ Final row verification passed');

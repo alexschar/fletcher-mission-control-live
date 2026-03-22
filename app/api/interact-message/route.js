@@ -48,18 +48,18 @@ function formatInteractMessage(elementContext, question) {
 }
 
 async function sendTelegramMessage(targetConfig, text) {
-  const userToken = process.env.ALEX_TELEGRAM_USER_TOKEN;
+  const botToken = readEnv(['ALEX_TELEGRAM_USER_TOKEN', 'TELEGRAM_BOT_TOKEN']);
   const botChatId = targetConfig.botChatId;
 
-  if (!userToken) {
-    throw new Error('Alex Telegram user token not configured');
+  if (!botToken) {
+    throw new Error('Telegram bot token not configured');
   }
 
   if (!botChatId) {
     throw new Error(`Bot chat ID not configured for ${targetConfig.label}`);
   }
 
-  const response = await fetch(`${TELEGRAM_API_BASE}/bot${userToken}/sendMessage`, {
+  const response = await fetch(`${TELEGRAM_API_BASE}/bot${botToken}/sendMessage`, {
     method: 'POST', 
     headers: {
       'Content-Type': 'application/json',
@@ -103,7 +103,6 @@ async function handler(request) {
 
     const elementContext = formatElementContext(selected);
     const message = formatInteractMessage(elementContext, question);
-    const telegram = await sendTelegramMessage(config, message);
     const queued = await createInteractMessage({
       agent_target: targetAgent,
       element_context: elementContext,
@@ -111,14 +110,30 @@ async function handler(request) {
       status: 'pending'
     });
 
+    let telegramMessageId = null;
+    let telegramStatus = 'skipped';
+    let telegramError = null;
+
+    try {
+      const telegram = await sendTelegramMessage(config, message);
+      telegramMessageId = telegram?.result?.message_id || null;
+      telegramStatus = telegramMessageId ? 'sent' : 'attempted';
+    } catch (error) {
+      telegramStatus = 'failed';
+      telegramError = error?.message || 'Telegram send failed';
+      console.warn('Interact Telegram send failed (non-blocking):', telegramError);
+    }
+
     return NextResponse.json({
       ok: true,
       targetAgent,
       targetLabel: config.label,
-      deliveryMethod: 'telegram+supabase',
+      deliveryMethod: 'supabase-first',
       message,
       elementContext,
-      telegramMessageId: telegram?.result?.message_id || null,
+      telegramMessageId,
+      telegramStatus,
+      telegramError,
       queueMessageId: queued?.id || null,
       queueStatus: queued?.status || null,
     });
