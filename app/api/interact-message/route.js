@@ -8,13 +8,11 @@ const TELEGRAM_API_BASE = process.env.TELEGRAM_API_BASE || 'https://api.telegram
 const TARGETS = {
   fletcher: {
     label: 'Fletcher',
-    tokenEnvKeys: ['FLETCHER_TELEGRAM_BOT_TOKEN', 'TELEGRAM_FLETCHER_BOT_TOKEN'],
-    chatEnvKeys: ['ALEX_TELEGRAM_CHAT_ID', 'TELEGRAM_ALEX_CHAT_ID', 'TELEGRAM_CHAT_ID'],
+    botChatId: process.env.FLETCHER_BOT_CHAT_ID || '@fletcheragentbot',
   },
   sawyer: {
-    label: 'Sawyer',
-    tokenEnvKeys: ['SAWYER_TELEGRAM_BOT_TOKEN', 'TELEGRAM_SAWYER_BOT_TOKEN'],
-    chatEnvKeys: ['ALEX_TELEGRAM_CHAT_ID', 'TELEGRAM_ALEX_CHAT_ID', 'TELEGRAM_CHAT_ID'],
+    label: 'Sawyer', 
+    botChatId: process.env.SAWYER_BOT_CHAT_ID || '@sawyeragentbot',
   },
 };
 
@@ -50,24 +48,24 @@ function formatInteractMessage(elementContext, question) {
 }
 
 async function sendTelegramMessage(targetConfig, text) {
-  const token = readEnv(targetConfig.tokenEnvKeys);
-  const chatId = readEnv(targetConfig.chatEnvKeys);
+  const userToken = process.env.ALEX_TELEGRAM_USER_TOKEN;
+  const botChatId = targetConfig.botChatId;
 
-  if (!token) {
-    throw new Error(`Telegram bot token is not configured for ${targetConfig.label}`);
+  if (!userToken) {
+    throw new Error('Alex Telegram user token not configured');
   }
 
-  if (!chatId) {
-    throw new Error('Telegram chat ID is not configured for Mission Control interact');
+  if (!botChatId) {
+    throw new Error(`Bot chat ID not configured for ${targetConfig.label}`);
   }
 
-  const response = await fetch(`${TELEGRAM_API_BASE}/bot${token}/sendMessage`, {
-    method: 'POST',
+  const response = await fetch(`${TELEGRAM_API_BASE}/bot${userToken}/sendMessage`, {
+    method: 'POST', 
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      chat_id: chatId,
+      chat_id: botChatId,
       text,
     }),
   });
