@@ -134,7 +134,9 @@ verify_projects() {
   project_id="$(node -e 'const data=JSON.parse(process.argv[1]); if(!Array.isArray(data)||!data[0]?.id){console.error("No projects found");process.exit(1)} console.log(data[0].id)' "$list")"
   updated_note="deploy-verify update $SHORT_HASH $(date +%s)"
   actor="deploy-verify"
-  patch="$(api -X PATCH "$BASE_URL/api/projects/$project_id" -H 'Content-Type: application/json' --data '{"last_update":"'$updated_note'","updated_by":"'$actor'"}')"
+  local payload
+  payload="$(node -e 'console.log(JSON.stringify({last_update: process.argv[1], updated_by: process.argv[2]}))' "$updated_note" "$actor")"
+  patch="$(api -X PATCH "$BASE_URL/api/projects/$project_id" -H 'Content-Type: application/json' --data "$payload")"
   node -e 'const item=JSON.parse(process.argv[1]); if(item.last_update !== process.argv[2] || item.updated_by !== process.argv[3]){console.error("Project PATCH failed");process.exit(1)} console.log("✅ Project PATCH verified")' "$patch" "$updated_note" "$actor"
 }
 
