@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import { withAuth } from '../../../lib/auth';
 
-const TELEGRAM_API_BASE = 'https://api.telegram.org';
+const { createInteractMessage } = require('../../../lib/supabase');
+
+const TELEGRAM_API_BASE = process.env.TELEGRAM_API_BASE || 'https://api.telegram.org';
 
 const TARGETS = {
   fletcher: {
@@ -33,14 +35,18 @@ function escapeHtml(value) {
     .replaceAll('>', '&gt;');
 }
 
-function formatInteractMessage(selected = {}, question) {
+function formatElementContext(selected = {}) {
   const elementType = String(selected.type || 'element').trim() || 'element';
   const title = String(selected.title || 'Untitled element').trim() || 'Untitled element';
   const contextParts = [selected.details, selected.page, selected.href]
     .map((part) => String(part || '').trim())
     .filter(Boolean);
   const elementDetails = contextParts.length > 0 ? `${title} | ${contextParts.join(' | ')}` : title;
-  return `MC: [${elementType} — ${elementDetails}] Alex asks: ${String(question || '').trim()}`;
+  return `[${elementType} — ${elementDetails}]`;
+}
+
+function formatInteractMessage(elementContext, question) {
+  return `MC: ${elementContext} Alex asks: ${String(question || '').trim()}`;
 }
 
 async function sendTelegramMessage(targetConfig, text) {
@@ -97,16 +103,26 @@ async function handler(request) {
       return NextResponse.json({ error: 'Question is required' }, { status: 400 });
     }
 
-    const message = formatInteractMessage(selected, question);
+    const elementContext = formatElementContext(selected);
+    const message = formatInteractMessage(elementContext, question);
     const telegram = await sendTelegramMessage(config, message);
+    const queued = await createInteractMessage({
+      agent_target: targetAgent,
+      element_context: elementContext,
+      user_message: question,
+      status: 'pending'
+    });
 
     return NextResponse.json({
       ok: true,
       targetAgent,
       targetLabel: config.label,
-      deliveryMethod: 'telegram',
+      deliveryMethod: 'telegram+supabase',
       message,
+      elementContext,
       telegramMessageId: telegram?.result?.message_id || null,
+      queueMessageId: queued?.id || null,
+      queueStatus: queued?.status || null,
     });
   } catch (error) {
     return NextResponse.json({ error: error.message || 'Failed to send interact message' }, { status: 500 });
