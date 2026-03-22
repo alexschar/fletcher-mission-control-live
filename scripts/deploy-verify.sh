@@ -2,7 +2,7 @@
 set -euo pipefail
 
 if [[ $# -lt 1 ]]; then
-  echo "Usage: bash scripts/deploy-verify.sh /|/agents|/tasks|/schedule|/reports|/conversations|/app"
+  echo "Usage: bash scripts/deploy-verify.sh /|/agents|/tasks|/projects|/schedule|/reports|/conversations|/app"
   exit 1
 fi
 
@@ -125,6 +125,19 @@ verify_schedule() {
   node -e 'const data=JSON.parse(process.argv[1]); const item=data.find(x=>String(x.id)===process.argv[2]); if(!item||item.status!=="active"){console.error("Resume failed");process.exit(1)} console.log("✅ Resume verified")' "$resumed" "$id"
 }
 
+verify_projects() {
+  echo "── Verifying /projects ──"
+  assert_page_ok "$BASE_URL/projects"
+  local list project_id patch updated_note actor
+  list="$(api "$BASE_URL/api/projects")"
+  assert_json_array "$list"
+  project_id="$(node -e 'const data=JSON.parse(process.argv[1]); if(!Array.isArray(data)||!data[0]?.id){console.error("No projects found");process.exit(1)} console.log(data[0].id)' "$list")"
+  updated_note="deploy-verify update $SHORT_HASH $(date +%s)"
+  actor="deploy-verify"
+  patch="$(api -X PATCH "$BASE_URL/api/projects/$project_id" -H 'Content-Type: application/json' --data '{"last_update":"'$updated_note'","updated_by":"'$actor'"}')"
+  node -e 'const item=JSON.parse(process.argv[1]); if(item.last_update !== process.argv[2] || item.updated_by !== process.argv[3]){console.error("Project PATCH failed");process.exit(1)} console.log("✅ Project PATCH verified")' "$patch" "$updated_note" "$actor"
+}
+
 verify_reports() {
   echo "── Verifying /reports addendums ──"
   assert_page_ok "$BASE_URL/reports"
@@ -162,6 +175,9 @@ for PAGE in "$@"; do
       ;;
     /schedule)
       verify_schedule
+      ;;
+    /projects)
+      verify_projects
       ;;
     /reports)
       verify_reports

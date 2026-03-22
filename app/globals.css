@@ -455,7 +455,7 @@ tr:hover td { color: var(--text-primary); background: var(--bg-card-hover); }
 .error-boundary-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 18px; }
 
 @media (max-width: 1024px) {
-  .grid-3, .grid-4, .content-card-grid, .dashboard-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grid-3, .grid-4, .content-card-grid, .dashboard-grid, .projects-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .kanban { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .content-pipeline-layout, .content-pipeline-top-stats { grid-template-columns: 1fr; }
   .content-pipeline-day-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
@@ -479,7 +479,7 @@ tr:hover td { color: var(--text-primary); background: var(--bg-card-hover); }
   .page-header-row, .content-header, .report-row-top, .content-panel-footer, .content-panel-header, .agent-header, .status-card-row, .schedule-item, .conversation-header, .override-header, .memory-file-header, .form-inline { flex-direction: column; align-items: stretch; }
   .page-header-actions, .content-panel-actions { width: 100%; }
   .page-header-actions .btn, .content-header .btn, .form-inline .btn, .content-panel-actions .btn { width: 100%; justify-content: center; }
-  .grid-2, .grid-3, .grid-4, .reports-form-grid, .content-form-grid, .content-card-grid, .kanban, .detail-row, .dashboard-grid, .dashboard-stat-list, .content-pipeline-day-grid, .content-pipeline-top-stats { grid-template-columns: 1fr; }
+  .grid-2, .grid-3, .grid-4, .reports-form-grid, .content-form-grid, .content-card-grid, .kanban, .detail-row, .dashboard-grid, .dashboard-stat-list, .content-pipeline-day-grid, .content-pipeline-top-stats, .projects-card-grid { grid-template-columns: 1fr; }
   .filter-group, .form-field-grow, .form-field-grow-2, .form-field-grow-3 { min-width: 100%; }
   .table-wrap { -webkit-overflow-scrolling: touch; }
   .status-card-left { align-items: flex-start; }
