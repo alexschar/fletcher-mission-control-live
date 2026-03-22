@@ -1,39 +1,84 @@
 import { NextResponse } from 'next/server';
 import { withAuth } from '../../../lib/auth';
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
 
-const execFileAsync = promisify(execFile);
+const TELEGRAM_API_BASE = 'https://api.telegram.org';
 
 const TARGETS = {
   fletcher: {
-    agentId: 'main',
-    fallbackSessionId: 'e41a3a9a-9b2c-4883-911a-f5fd6ca42150',
     label: 'Fletcher',
+    tokenEnvKeys: ['FLETCHER_TELEGRAM_BOT_TOKEN', 'TELEGRAM_FLETCHER_BOT_TOKEN'],
+    chatEnvKeys: ['ALEX_TELEGRAM_CHAT_ID', 'TELEGRAM_ALEX_CHAT_ID', 'TELEGRAM_CHAT_ID'],
   },
   sawyer: {
-    agentId: 'sawyer',
-    fallbackSessionId: '1481bb59-3e45-4650-a2f0-ea51b8dacea2',
     label: 'Sawyer',
+    tokenEnvKeys: ['SAWYER_TELEGRAM_BOT_TOKEN', 'TELEGRAM_SAWYER_BOT_TOKEN'],
+    chatEnvKeys: ['ALEX_TELEGRAM_CHAT_ID', 'TELEGRAM_ALEX_CHAT_ID', 'TELEGRAM_CHAT_ID'],
   },
 };
 
-async function resolveSessionId(agentId, fallbackSessionId) {
-  try {
-    const { stdout } = await execFileAsync('openclaw', ['sessions', '--all-agents', '--json'], {
-      cwd: process.cwd(),
-      timeout: 15000,
-      maxBuffer: 1024 * 1024,
-    });
-    const payload = JSON.parse(stdout || '{}');
-    const sessions = Array.isArray(payload.sessions) ? payload.sessions : [];
-    const match = sessions
-      .filter((session) => session.agentId === agentId)
-      .sort((a, b) => Number(b.updatedAt || 0) - Number(a.updatedAt || 0))[0];
-    return match?.sessionId || fallbackSessionId;
-  } catch {
-    return fallbackSessionId;
+function readEnv(keys = []) {
+  for (const key of keys) {
+    const value = process.env[key];
+    if (typeof value === 'string' && value.trim()) {
+      return value.trim();
+    }
   }
+  return null;
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;');
+}
+
+function formatInteractMessage(selected = {}, question) {
+  const elementType = String(selected.type || 'element').trim() || 'element';
+  const title = String(selected.title || 'Untitled element').trim() || 'Untitled element';
+  const contextParts = [selected.details, selected.page, selected.href]
+    .map((part) => String(part || '').trim())
+    .filter(Boolean);
+  const elementDetails = contextParts.length > 0 ? `${title} | ${contextParts.join(' | ')}` : title;
+  return `MC: [${elementType} — ${elementDetails}] Alex asks: ${String(question || '').trim()}`;
+}
+
+async function sendTelegramMessage(targetConfig, text) {
+  const token = readEnv(targetConfig.tokenEnvKeys);
+  const chatId = readEnv(targetConfig.chatEnvKeys);
+
+  if (!token) {
+    throw new Error(`Telegram bot token is not configured for ${targetConfig.label}`);
+  }
+
+  if (!chatId) {
+    throw new Error('Telegram chat ID is not configured for Mission Control interact');
+  }
+
+  const response = await fetch(`${TELEGRAM_API_BASE}/bot${token}/sendMessage`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      chat_id: chatId,
+      text,
+    }),
+  });
+
+  let payload = null;
+  try {
+    payload = await response.json();
+  } catch {
+    payload = null;
+  }
+
+  if (!response.ok || !payload?.ok) {
+    const telegramDescription = payload?.description || `Telegram API HTTP ${response.status}`;
+    throw new Error(`Telegram send failed: ${telegramDescription}`);
+  }
+
+  return payload;
 }
 
 async function handler(request) {
@@ -52,39 +97,16 @@ async function handler(request) {
       return NextResponse.json({ error: 'Question is required' }, { status: 400 });
     }
 
-    const elementType = selected.type || 'element';
-    const elementTitle = selected.title || 'Untitled element';
-    const details = [selected.details, selected.page].filter(Boolean).join(' | ');
-    const message = `Alex selected [${elementType}: ${elementTitle}${details ? ` — ${details}` : ''}] and asks: ${question}`;
-    const sessionId = await resolveSessionId(config.agentId, config.fallbackSessionId);
-
-    const result = await execFileAsync('openclaw', [
-      'agent',
-      '--agent', config.agentId,
-      '--session-id', sessionId,
-      '--message', message,
-      '--thinking', 'low',
-      '--json',
-    ], {
-      cwd: process.cwd(),
-      timeout: 45000,
-      maxBuffer: 1024 * 1024,
-    });
-
-    let parsed = null;
-    try {
-      parsed = JSON.parse(result.stdout || '{}');
-    } catch {
-      parsed = { raw: result.stdout || '' };
-    }
+    const message = formatInteractMessage(selected, question);
+    const telegram = await sendTelegramMessage(config, message);
 
     return NextResponse.json({
       ok: true,
       targetAgent,
       targetLabel: config.label,
-      sessionId,
+      deliveryMethod: 'telegram',
       message,
-      result: parsed,
+      telegramMessageId: telegram?.result?.message_id || null,
     });
   } catch (error) {
     return NextResponse.json({ error: error.message || 'Failed to send interact message' }, { status: 500 });
