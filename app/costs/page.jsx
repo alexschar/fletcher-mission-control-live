@@ -76,11 +76,11 @@ export default function CostsPage() {
                     <tbody>
                       {entries.slice(0, 10).map((e, i) => (
                         <tr key={i}>
-                          <td>{e.timestamp ? new Date(e.timestamp).toLocaleTimeString() : "-"}</td>
-                          <td>{e.provider || "-"}</td>
+                          <td>{(e.timestamp || e.created_at) ? new Date(e.timestamp || e.created_at).toLocaleTimeString() : "-"}</td>
+                          <td>{e.agent || e.provider || "-"}</td>
                           <td style={{ fontFamily: "monospace", fontSize: 12 }}>{e.model || "-"}</td>
                           <td style={{ fontFamily: "monospace", whiteSpace: "nowrap" }}>
-                            ${Number(e.cost_est || 0).toFixed(4)}
+                            ${Number(e.calculated_cost || e.cost_est || 0).toFixed(6)}
                           </td>
                         </tr>
                       ))}

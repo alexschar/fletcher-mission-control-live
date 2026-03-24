@@ -519,4 +519,51 @@ tr:hover td { color: var(--text-primary); background: var(--bg-card-hover); }
   .content-mobile-footer { margin-top: 4px; }
   .content-filter-search { min-width: 100%; }
   .metric-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .life-feed-stats { flex-direction: column; align-items: flex-start; }
+  .life-feed-filters { flex-direction: column; }
+  .filter-chips { flex-wrap: wrap; }
 }
+
+/* ==================== Life Feed ==================== */
+.life-feed-stats { display: flex; gap: 8px; align-items: center; }
+.stat-pill { font-size: 12px; padding: 4px 12px; border-radius: 999px; background: var(--bg-card-hover); border: 1px solid var(--border); color: var(--text-secondary); white-space: nowrap; }
+.life-feed-filters { display: flex; gap: 12px; align-items: center; margin-bottom: 20px; }
+.filter-chips { display: flex; gap: 6px; flex: 1; overflow-x: auto; }
+.chip { padding: 6px 14px; border-radius: 999px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-secondary); font-size: 13px; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+.chip:hover { border-color: var(--accent); color: var(--text-primary); }
+.chip-active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+.life-signal-card { transition: border-color 0.15s; }
+.life-signal-card:hover { border-color: var(--accent-dim); }
+.life-signal-card[data-status="unread"] { border-left: 3px solid var(--accent); }
+.life-signal-card[data-priority="urgent"] { border-left: 3px solid var(--red); }
+.life-signal-card[data-priority="high"] { border-left: 3px solid var(--orange); }
+
+.signal-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.signal-icon { font-size: 18px; flex-shrink: 0; }
+.signal-meta { display: flex; gap: 8px; align-items: center; flex: 1; flex-wrap: wrap; }
+.signal-source { font-size: 12px; font-weight: 600; color: var(--text-primary); text-transform: capitalize; }
+.signal-type { font-size: 11px; color: var(--text-muted); text-transform: capitalize; }
+.signal-time { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+.signal-badges { display: flex; gap: 6px; flex-shrink: 0; }
+.signal-priority-badge { font-size: 10px; padding: 2px 8px; border-radius: 4px; border: 1px solid; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; }
+.signal-title { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+.signal-body { font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 8px; overflow-wrap: anywhere; }
+.signal-agent-reason { font-size: 12px; color: var(--purple); margin-bottom: 8px; font-style: italic; }
+
+.signal-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+.signal-feedback-row { display: flex; gap: 6px; align-items: center; }
+.signal-feedback-given { font-size: 12px; color: var(--text-secondary); }
+.signal-feedback-note-text { font-style: italic; color: var(--text-muted); }
+.signal-status-label { font-size: 11px; color: var(--text-muted); text-transform: capitalize; }
+.signal-feedback-expand { margin-top: 10px; display: grid; gap: 8px; }
+.signal-feedback-expand-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* ==================== Preferences ==================== */
+.preferences-content { font-size: 14px; line-height: 1.7; white-space: pre-wrap; font-family: 'SF Mono', 'Fira Code', monospace; color: var(--text-secondary); max-height: 500px; overflow-y: auto; padding: 16px; background: var(--bg-card-hover); border-radius: 8px; }
+.feedback-history-list { display: grid; gap: 8px; }
+.feedback-item { display: flex; gap: 12px; align-items: center; padding: 10px 14px; background: var(--bg-card-hover); border-radius: 8px; font-size: 13px; }
+.feedback-item-signal { flex: 1; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.feedback-item-value { font-weight: 600; }
+.feedback-item-time { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+.accuracy-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }

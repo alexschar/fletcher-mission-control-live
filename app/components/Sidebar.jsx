@@ -5,18 +5,14 @@ import { getAuthHeaders } from "../../lib/api-client";
 import { getReportNotifications, subscribeToNotificationChanges } from "../../lib/notifications";
 
 const NAV_ITEMS = [
-  { href: "/", label: "Dashboard" },
+  { href: "/", label: "Life Feed" },
   { href: "/agents", label: "Agents" },
   { href: "/costs", label: "Costs" },
   { href: "/tasks", label: "Tasks" },
   { href: "/projects", label: "Projects" },
   { href: "/content", label: "Content" },
   { href: "/reports", label: "Reports", hasNotifications: true },
-  { href: "/schedule", label: "Schedule" },
-  { href: "/memory", label: "Memory" },
-  { href: "/health", label: "Health" },
-  { href: "/conversations", label: "Conversations" },
-  { href: "/overrides", label: "Overrides" },
+  { href: "/preferences", label: "Preferences" },
 ];
 
 export default function Sidebar() {

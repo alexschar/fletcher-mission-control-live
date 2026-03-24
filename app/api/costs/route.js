@@ -66,16 +66,13 @@ export async function POST(request) {
   try {
     const body = await request.json();
     
-    // Store in the format the frontend expects
+    // Store using Supabase schema field names (costs table)
     await db.addCostEntry({
       agent: body.agent,
       model: body.model,
-      provider: body.provider,
-      tokens_in: body.tokens_in || body.input_tokens || 0,
-      tokens_out: body.tokens_out || body.output_tokens || 0,
-      cost_est: body.cost_est || body.calculated_cost || 0,
-      notes: body.notes,
-      timestamp: new Date().toISOString()
+      input_tokens: body.input_tokens || body.tokens_in || 0,
+      output_tokens: body.output_tokens || body.tokens_out || 0,
+      calculated_cost: body.calculated_cost || body.cost_est || 0,
     });
     
     return NextResponse.json({ ok: true });
