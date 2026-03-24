@@ -1,8 +1,13 @@
 // Script to create health_audits table in Supabase
 const { createClient } = require('@supabase/supabase-js');
 
-const supabaseUrl = 'https://yulirzjagrebzhfteyqx.supabase.co';
-const serviceKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1bGlyemphZ3JlYnpoZnRleXF4Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MzM0Njg0NSwiZXhwIjoyMDg4OTIyODQ1fQ.ut_Cr1c1JTvINpHWlYAi-Xd3T99z9EQrVpiQDSoTGcE';
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!supabaseUrl || !serviceKey) {
+  console.error('Missing Supabase credentials in environment variables');
+  process.exit(1);
+}
 
 const supabase = createClient(supabaseUrl, serviceKey, {
   auth: { persistSession: false }
