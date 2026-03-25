@@ -616,3 +616,61 @@ tr:hover td { color: var(--text-primary); background: var(--bg-card-hover); }
 /* Email feedback */
 .email-feedback-section { padding-top: 12px; border-top: 1px solid var(--border); }
 .email-feedback-actions { display: flex; gap: 8px; align-items: center; }
+
+/* ===== Social Intelligence ===== */
+
+/* Platform overview grid */
+.social-platform-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; margin-bottom: 20px; }
+.social-platform-card { padding: 16px; }
+.social-platform-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.social-platform-name { font-size: 15px; font-weight: 600; text-transform: capitalize; }
+.social-platform-time { font-size: 11px; color: var(--text-muted); }
+.social-platform-metrics { display: flex; flex-wrap: wrap; gap: 16px; }
+.social-metric { display: flex; flex-direction: column; gap: 2px; min-width: 70px; }
+.social-metric.full { flex-basis: 100%; }
+.social-metric-value { font-size: 20px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.5px; }
+.social-metric-value.text { font-size: 13px; font-weight: 500; color: var(--text-secondary); }
+.social-metric-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.social-metric-delta { font-size: 12px; font-weight: 600; }
+.social-metric-delta.positive { color: var(--green); }
+.social-metric-delta.negative { color: var(--red); }
+.social-platform-insight { margin-top: 10px; font-size: 13px; color: var(--text-secondary); padding-top: 10px; border-top: 1px solid var(--border); line-height: 1.5; }
+
+/* Section titles */
+.social-section { margin-bottom: 24px; }
+.social-section-title { font-size: 14px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+
+/* Signal cards */
+.social-signal-card { cursor: pointer; transition: border-color 0.15s; }
+.social-signal-card:hover { border-color: var(--accent-dim); }
+.social-signal-expanded { cursor: default; }
+.social-idea-card { border-left: 3px solid var(--purple); }
+.social-signal-row { display: flex; align-items: center; gap: 12px; padding: 4px 0; }
+.social-signal-source { font-size: 12px; font-weight: 600; text-transform: capitalize; min-width: 70px; }
+.social-signal-main { flex: 1; min-width: 0; }
+.social-signal-title { font-size: 14px; font-weight: 500; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.social-signal-preview { font-size: 13px; color: var(--text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.social-signal-badges { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.social-type-badge { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.3px; }
+.social-signal-time { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+
+/* Expanded detail */
+.social-signal-detail { padding-top: 12px; border-top: 1px solid var(--border); margin-top: 10px; }
+.social-signal-body { font-size: 14px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 12px; }
+.social-engagement-bar { display: flex; flex-wrap: wrap; gap: 16px; padding: 10px 14px; background: rgba(108,138,255,0.06); border-radius: 8px; margin-bottom: 12px; }
+.social-eng-item { font-size: 13px; color: var(--text-secondary); font-weight: 500; }
+.social-agent-insight { padding: 10px 14px; background: var(--bg-input); border-radius: 8px; margin-bottom: 12px; }
+.social-insight-label { display: block; font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+.social-insight-text { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
+.social-draft-section { padding: 10px 14px; background: rgba(175,122,255,0.06); border-radius: 8px; border-left: 3px solid var(--purple); margin-bottom: 12px; }
+.social-draft-label { display: block; font-size: 11px; color: var(--purple); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; font-weight: 600; }
+.social-draft-text { font-size: 13px; color: var(--text-secondary); line-height: 1.5; white-space: pre-wrap; }
+.social-correlation { font-size: 13px; color: var(--text-muted); font-style: italic; padding: 8px 0; }
+.social-feedback-section { padding-top: 12px; border-top: 1px solid var(--border); }
+.social-feedback-actions { display: flex; gap: 8px; align-items: center; }
+
+@media (max-width: 768px) {
+  .social-platform-grid { grid-template-columns: 1fr; }
+  .social-signal-row { flex-wrap: wrap; }
+  .social-signal-badges { width: 100%; margin-top: 4px; }
+}

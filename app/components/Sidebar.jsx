@@ -7,6 +7,7 @@ import { getReportNotifications, subscribeToNotificationChanges } from "../../li
 const NAV_ITEMS = [
   { href: "/", label: "Life Feed" },
   { href: "/email", label: "Email" },
+  { href: "/social", label: "Social" },
   { href: "/agents", label: "Agents" },
   { href: "/costs", label: "Costs" },
   { href: "/tasks", label: "Tasks" },
