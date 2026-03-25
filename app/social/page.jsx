@@ -17,7 +17,11 @@ const SIGNAL_TYPES = {
   content_performance: { label: "Performance", color: "var(--accent)", bg: "rgba(108,138,255,0.12)" },
   content_idea: { label: "Idea", color: "var(--purple)", bg: "rgba(175,122,255,0.12)" },
   social_mention: { label: "Mention", color: "var(--yellow)", bg: "rgba(251,191,36,0.12)" },
+  social_metrics: { label: "Metrics", color: "var(--blue)", bg: "rgba(88,166,255,0.12)" },
   linkedin_engagement: { label: "LinkedIn", color: "var(--blue)", bg: "rgba(88,166,255,0.12)" },
+  linkedin_message: { label: "Message", color: "var(--blue)", bg: "rgba(88,166,255,0.12)" },
+  linkedin_jobs: { label: "Jobs", color: "var(--blue)", bg: "rgba(88,166,255,0.12)" },
+  linkedin_notification: { label: "Notification", color: "var(--blue)", bg: "rgba(88,166,255,0.12)" },
   pinterest_activity: { label: "Pinterest", color: "var(--red)", bg: "rgba(248,113,113,0.12)" },
 };
 
@@ -55,71 +59,53 @@ function platformColor(source) {
 }
 
 function formatNumber(n) {
-  if (n == null) return "—";
+  if (n == null) return "\u2014";
   if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
   if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
   return n.toLocaleString();
 }
 
-function deltaLabel(current, previous) {
-  if (current == null || previous == null || previous === 0) return null;
-  const pct = ((current - previous) / previous * 100).toFixed(0);
-  const sign = pct > 0 ? "+" : "";
-  return { text: `${sign}${pct}%`, positive: pct >= 0 };
+function DeltaBadge({ value, suffix = "" }) {
+  if (value == null || value === 0) return null;
+  const sign = value > 0 ? "+" : "";
+  const positive = value > 0;
+  return (
+    <span className={`social-metric-delta ${positive ? "positive" : "negative"}`}>
+      {sign}{typeof value === "number" && Math.abs(value) < 100 ? value : formatNumber(value)}{suffix}
+    </span>
+  );
 }
 
-// Platform overview card — shows aggregated metrics from metadata
-function PlatformCard({ source, signals }) {
-  const latest = signals[0]; // most recent signal for this platform
+// ==================== Per-Platform Summary Cards ====================
+
+function YouTubeCard({ signals }) {
+  const latest = signals.find((s) => s.signal_type === "social_metrics") || signals[0];
   if (!latest) return null;
-
   const meta = latest.metadata || {};
-  const followers = meta.followers || meta.subscriber_count || meta.follower_count;
-  const prevFollowers = meta.prev_followers || meta.prev_subscriber_count;
-  const engagement = meta.engagement_rate || meta.avg_engagement;
-  const prevEngagement = meta.prev_engagement_rate;
-  const views = meta.total_views || meta.views || meta.weekly_views;
-  const prevViews = meta.prev_views || meta.prev_weekly_views;
-  const topContent = meta.top_content || meta.top_post || meta.top_video;
-
-  const fDelta = deltaLabel(followers, prevFollowers);
-  const eDelta = deltaLabel(engagement, prevEngagement);
-  const vDelta = deltaLabel(views, prevViews);
-
-  const color = platformColor(source);
-
   return (
     <div className="social-platform-card card">
       <div className="social-platform-header">
-        <span className="social-platform-name" style={{ color }}>{source.charAt(0).toUpperCase() + source.slice(1)}</span>
+        <span className="social-platform-name" style={{ color: platformColor("youtube") }}>YouTube</span>
         <span className="social-platform-time">{formatTime(latest.created_at)}</span>
       </div>
       <div className="social-platform-metrics">
-        {followers != null && (
+        {meta.subscribers != null && (
           <div className="social-metric">
-            <span className="social-metric-value">{formatNumber(followers)}</span>
-            <span className="social-metric-label">Followers</span>
-            {fDelta && <span className={`social-metric-delta ${fDelta.positive ? "positive" : "negative"}`}>{fDelta.text}</span>}
+            <span className="social-metric-value">{formatNumber(meta.subscribers)}</span>
+            <span className="social-metric-label">Subscribers</span>
+            <DeltaBadge value={meta.subscriber_delta} />
           </div>
         )}
-        {views != null && (
+        {meta.total_views != null && (
           <div className="social-metric">
-            <span className="social-metric-value">{formatNumber(views)}</span>
-            <span className="social-metric-label">Views</span>
-            {vDelta && <span className={`social-metric-delta ${vDelta.positive ? "positive" : "negative"}`}>{vDelta.text}</span>}
+            <span className="social-metric-value">{formatNumber(meta.total_views)}</span>
+            <span className="social-metric-label">Total Views</span>
           </div>
         )}
-        {engagement != null && (
+        {meta.video_count != null && (
           <div className="social-metric">
-            <span className="social-metric-value">{typeof engagement === "number" ? `${engagement.toFixed(1)}%` : engagement}</span>
-            <span className="social-metric-label">Engagement</span>
-            {eDelta && <span className={`social-metric-delta ${eDelta.positive ? "positive" : "negative"}`}>{eDelta.text}</span>}
-          </div>
-        )}
-        {topContent && (
-          <div className="social-metric full">
-            <span className="social-metric-label">Top content</span>
-            <span className="social-metric-value text">{topContent}</span>
+            <span className="social-metric-value">{formatNumber(meta.video_count)}</span>
+            <span className="social-metric-label">Videos</span>
           </div>
         )}
       </div>
@@ -130,7 +116,176 @@ function PlatformCard({ source, signals }) {
   );
 }
 
-// Signal card for the social feed
+function InstagramCard({ signals }) {
+  // Group by username — show separate card per account
+  const metricSignals = signals.filter((s) => s.signal_type === "social_metrics");
+  const byUsername = {};
+  for (const s of metricSignals) {
+    const user = s.metadata?.username || "instagram";
+    if (!byUsername[user]) byUsername[user] = s;
+  }
+  const accounts = Object.entries(byUsername);
+
+  if (accounts.length === 0) {
+    // Fall back to latest signal if no social_metrics
+    const latest = signals[0];
+    if (!latest) return null;
+    const meta = latest.metadata || {};
+    accounts.push([meta.username || "instagram", latest]);
+  }
+
+  return accounts.map(([username, signal]) => {
+    const meta = signal.metadata || {};
+    return (
+      <div key={username} className="social-platform-card card">
+        <div className="social-platform-header">
+          <span className="social-platform-name" style={{ color: platformColor("instagram") }}>Instagram</span>
+          <span className="social-platform-time">{formatTime(signal.created_at)}</span>
+        </div>
+        <div className="social-platform-account">@{username}</div>
+        <div className="social-platform-metrics">
+          {meta.followers != null && (
+            <div className="social-metric">
+              <span className="social-metric-value">{formatNumber(meta.followers)}</span>
+              <span className="social-metric-label">Followers</span>
+              <DeltaBadge value={meta.follower_delta} />
+              {meta.follower_delta_pct != null && <DeltaBadge value={meta.follower_delta_pct} suffix="%" />}
+            </div>
+          )}
+          {meta.media_count != null && (
+            <div className="social-metric">
+              <span className="social-metric-value">{formatNumber(meta.media_count)}</span>
+              <span className="social-metric-label">Posts</span>
+            </div>
+          )}
+        </div>
+        {signal.agent_notes?.reason && (
+          <div className="social-platform-insight">{signal.agent_notes.reason}</div>
+        )}
+      </div>
+    );
+  });
+}
+
+function PinterestCard({ signals }) {
+  const latest = signals[0];
+  if (!latest) return null;
+  const meta = latest.metadata || {};
+  const recentTitles = meta.recent_titles || [];
+
+  return (
+    <div className="social-platform-card card">
+      <div className="social-platform-header">
+        <span className="social-platform-name" style={{ color: platformColor("pinterest") }}>Pinterest</span>
+        <span className="social-platform-time">{formatTime(latest.created_at)}</span>
+      </div>
+      <div className="social-platform-metrics">
+        {meta.pin_count != null && (
+          <div className="social-metric">
+            <span className="social-metric-value">{formatNumber(meta.pin_count)}</span>
+            <span className="social-metric-label">Pins</span>
+          </div>
+        )}
+        {meta.followers != null && (
+          <div className="social-metric">
+            <span className="social-metric-value">{formatNumber(meta.followers)}</span>
+            <span className="social-metric-label">Followers</span>
+          </div>
+        )}
+      </div>
+      {recentTitles.length > 0 && (
+        <div className="social-platform-recent">
+          <span className="social-platform-recent-label">Recent pins</span>
+          {recentTitles.slice(0, 3).map((t, i) => (
+            <span key={i} className="social-platform-recent-item">{t}</span>
+          ))}
+        </div>
+      )}
+      {latest.agent_notes?.reason && (
+        <div className="social-platform-insight">{latest.agent_notes.reason}</div>
+      )}
+    </div>
+  );
+}
+
+function TikTokCard() {
+  return (
+    <div className="social-platform-card card social-platform-pending">
+      <div className="social-platform-header">
+        <span className="social-platform-name" style={{ color: platformColor("tiktok") }}>TikTok</span>
+      </div>
+      <div className="social-platform-pending-body">
+        <span className="social-platform-pending-icon">{"\uD83D\uDD27"}</span>
+        <span className="social-platform-pending-text">API setup pending</span>
+        <span className="social-platform-pending-hint">Connect via social-signals.js with Apify</span>
+      </div>
+    </div>
+  );
+}
+
+function LinkedInCard({ signals }) {
+  // LinkedIn signals come from Gmail notifications
+  const now = new Date();
+  const weekAgo = new Date(now - 7 * 86400000);
+  const thisWeek = signals.filter((s) => new Date(s.created_at) >= weekAgo);
+
+  const engagements = thisWeek.filter((s) => s.signal_type === "linkedin_engagement").length;
+  const messages = thisWeek.filter((s) => s.signal_type === "linkedin_message").length;
+  const jobs = thisWeek.filter((s) => s.signal_type === "linkedin_jobs").length;
+  const other = thisWeek.filter((s) =>
+    s.signal_type === "linkedin_notification" ||
+    (s.signal_type !== "linkedin_engagement" && s.signal_type !== "linkedin_message" && s.signal_type !== "linkedin_jobs")
+  ).length;
+  const total = thisWeek.length;
+  const latest = signals[0];
+
+  return (
+    <div className="social-platform-card card">
+      <div className="social-platform-header">
+        <span className="social-platform-name" style={{ color: platformColor("linkedin") }}>LinkedIn</span>
+        {latest && <span className="social-platform-time">{formatTime(latest.created_at)}</span>}
+      </div>
+      <div className="social-platform-account">Via email notifications</div>
+      {total > 0 ? (
+        <div className="social-platform-metrics">
+          <div className="social-metric">
+            <span className="social-metric-value">{total}</span>
+            <span className="social-metric-label">This week</span>
+          </div>
+          {engagements > 0 && (
+            <div className="social-metric">
+              <span className="social-metric-value">{engagements}</span>
+              <span className="social-metric-label">Engagements</span>
+            </div>
+          )}
+          {messages > 0 && (
+            <div className="social-metric">
+              <span className="social-metric-value">{messages}</span>
+              <span className="social-metric-label">Messages</span>
+            </div>
+          )}
+          {jobs > 0 && (
+            <div className="social-metric">
+              <span className="social-metric-value">{jobs}</span>
+              <span className="social-metric-label">Jobs</span>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="social-platform-pending-body">
+          <span className="social-platform-pending-text">No notifications this week</span>
+          <span className="social-platform-pending-hint">LinkedIn signals come from Gmail notification parsing</span>
+        </div>
+      )}
+      {latest?.agent_notes?.reason && (
+        <div className="social-platform-insight">{latest.agent_notes.reason}</div>
+      )}
+    </div>
+  );
+}
+
+// ==================== Signal Card (for feed) ====================
+
 function SocialSignalCard({ signal, onFeedback, onDismiss, expanded, onToggle, isDismissed }) {
   const [feedbackNote, setFeedbackNote] = useState(signal.feedback_note || "");
   const [showFeedbackInput, setShowFeedbackInput] = useState(false);
@@ -247,25 +402,51 @@ function SocialSignalCard({ signal, onFeedback, onDismiss, expanded, onToggle, i
   );
 }
 
+// ==================== Main Page ====================
+
 export default function SocialPage() {
-  const [signals, setSignals] = useState([]);
+  const [socialSignals, setSocialSignals] = useState([]);
+  const [pinterestSignals, setPinterestSignals] = useState([]);
+  const [linkedinSignals, setLinkedinSignals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [platform, setPlatform] = useState("all");
   const [expandedId, setExpandedId] = useState(null);
   const [showDismissed, setShowDismissed] = useState(false);
 
+  // Fetch from all 3 sources
   const fetchSignals = useCallback(async () => {
     try {
-      const params = new URLSearchParams();
-      params.set("category", "social");
-      if (!showDismissed) params.set("exclude_dismissed", "true");
-      params.set("limit", "100");
-      const res = await fetch(`/api/life-signals?${params}`, { headers: getAuthHeaders() });
-      if (!res.ok) throw new Error(`Failed to fetch: ${res.status}`);
-      let data = await res.json();
-      data = Array.isArray(data) ? data : [];
-      setSignals(data);
+      const dismissed = showDismissed ? "" : "&exclude_dismissed=true";
+
+      // 1. Social category (YouTube, Instagram, TikTok, etc.)
+      const socialRes = fetch(`/api/life-signals?category=social&limit=100${dismissed}`, { headers: getAuthHeaders() });
+
+      // 2. Creative category for Pinterest (source=pinterest)
+      const pinterestRes = fetch(`/api/life-signals?category=creative&source=pinterest&limit=50${dismissed}`, { headers: getAuthHeaders() });
+
+      // 3. LinkedIn signals from Gmail (source filtering not possible via category, so fetch and filter client-side)
+      const linkedinRes = fetch(`/api/life-signals?category=email&source=gmail&limit=100${dismissed}`, { headers: getAuthHeaders() });
+
+      const [sRes, pRes, lRes] = await Promise.all([socialRes, pinterestRes, linkedinRes]);
+
+      if (!sRes.ok) throw new Error(`Social fetch failed: ${sRes.status}`);
+      const sData = await sRes.json();
+      setSocialSignals(Array.isArray(sData) ? sData : []);
+
+      if (pRes.ok) {
+        const pData = await pRes.json();
+        setPinterestSignals(Array.isArray(pData) ? pData : []);
+      }
+
+      if (lRes.ok) {
+        const lData = await lRes.json();
+        const liSignals = (Array.isArray(lData) ? lData : []).filter((s) =>
+          s.signal_type?.startsWith("linkedin_")
+        );
+        setLinkedinSignals(liSignals);
+      }
+
       setError(null);
     } catch (err) {
       console.error("Failed to load social signals:", err);
@@ -281,6 +462,10 @@ export default function SocialPage() {
     return () => clearInterval(interval);
   }, [fetchSignals]);
 
+  // Combined signals for the feed list (all sources)
+  const allSignals = [...socialSignals, ...pinterestSignals, ...linkedinSignals]
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
   async function handleFeedback(id, update) {
     try {
       const res = await fetch(`/api/life-signals/${id}`, {
@@ -290,7 +475,10 @@ export default function SocialPage() {
       });
       if (!res.ok) throw new Error("Failed to update");
       const updated = await res.json();
-      setSignals((prev) => prev.map((s) => (s.id === id ? updated : s)));
+      const updater = (prev) => prev.map((s) => (s.id === id ? updated : s));
+      setSocialSignals(updater);
+      setPinterestSignals(updater);
+      setLinkedinSignals(updater);
     } catch (err) {
       console.error("Feedback error:", err);
     }
@@ -306,33 +494,51 @@ export default function SocialPage() {
       if (!res.ok) throw new Error("Failed to dismiss");
       if (showDismissed) {
         const updated = await res.json();
-        setSignals((prev) => prev.map((s) => (s.id === id ? updated : s)));
+        const updater = (prev) => prev.map((s) => (s.id === id ? updated : s));
+        setSocialSignals(updater);
+        setPinterestSignals(updater);
+        setLinkedinSignals(updater);
       } else {
-        setSignals((prev) => prev.filter((s) => s.id !== id));
+        const remover = (prev) => prev.filter((s) => s.id !== id);
+        setSocialSignals(remover);
+        setPinterestSignals(remover);
+        setLinkedinSignals(remover);
       }
     } catch (err) {
       console.error("Dismiss error:", err);
     }
   }
 
-  // Filter by platform
-  const filtered = platform === "all" ? signals : signals.filter((s) => s.source === platform);
+  // Group social signals by platform for summary cards
+  const youtubeSignals = socialSignals.filter((s) => s.source === "youtube");
+  const instagramSignals = socialSignals.filter((s) => s.source === "instagram");
+  const hasTikTokSignals = socialSignals.some((s) => s.source === "tiktok");
 
-  // Group signals by platform for overview cards
-  const platformGroups = {};
-  for (const s of signals) {
-    if (!platformGroups[s.source]) platformGroups[s.source] = [];
-    platformGroups[s.source].push(s);
+  // Determine which platform label maps to which source for filtering the feed
+  function feedSourceMatch(signal) {
+    if (platform === "all") return true;
+    if (platform === "linkedin") return linkedinSignals.some((l) => l.id === signal.id);
+    if (platform === "pinterest") return pinterestSignals.some((p) => p.id === signal.id) || signal.source === "pinterest";
+    return signal.source === platform;
   }
-  const activePlatforms = Object.keys(platformGroups);
+
+  const filtered = allSignals.filter(feedSourceMatch);
 
   // Separate content ideas from regular signals
   const ideas = filtered.filter((s) => s.signal_type === "content_idea" || s.agent_draft);
   const feed = filtered.filter((s) => s.signal_type !== "content_idea");
 
   // Stats
-  const spikeCount = signals.filter((s) => s.signal_type === "engagement_spike").length;
-  const ideaCount = signals.filter((s) => s.signal_type === "content_idea" || s.agent_draft).length;
+  const spikeCount = allSignals.filter((s) => s.signal_type === "engagement_spike").length;
+  const ideaCount = allSignals.filter((s) => s.signal_type === "content_idea" || s.agent_draft).length;
+
+  // Count active platforms
+  const activePlatformSet = new Set();
+  if (youtubeSignals.length > 0) activePlatformSet.add("youtube");
+  if (instagramSignals.length > 0) activePlatformSet.add("instagram");
+  if (pinterestSignals.length > 0) activePlatformSet.add("pinterest");
+  if (linkedinSignals.length > 0) activePlatformSet.add("linkedin");
+  if (hasTikTokSignals) activePlatformSet.add("tiktok");
 
   return (
     <div>
@@ -342,13 +548,13 @@ export default function SocialPage() {
           <p>Cross-platform engagement, content performance, and agent-generated ideas.</p>
         </div>
         <div className="life-feed-stats">
-          <span className="stat-pill">{activePlatforms.length} platforms</span>
+          <span className="stat-pill">{activePlatformSet.size} platforms</span>
           <span className="stat-pill">{spikeCount} spikes</span>
           <span className="stat-pill">{ideaCount} ideas</span>
         </div>
       </div>
 
-      {/* Platform filter chips */}
+      {/* Platform filter chips — filter the feed list only, not summary cards */}
       <div className="life-feed-filters">
         <div className="filter-chips">
           {PLATFORMS.map((p) => (
@@ -377,7 +583,7 @@ export default function SocialPage() {
         <div className="card empty-card">
           <p className="empty">Error loading social signals: {error}</p>
         </div>
-      ) : signals.length === 0 ? (
+      ) : allSignals.length === 0 && !hasTikTokSignals ? (
         <div className="card empty-card">
           <p className="empty">No social signals yet</p>
           <p className="empty-hint">
@@ -387,14 +593,14 @@ export default function SocialPage() {
         </div>
       ) : (
         <>
-          {/* Platform overview cards */}
-          {platform === "all" && activePlatforms.length > 0 && (
-            <div className="social-platform-grid">
-              {activePlatforms.map((src) => (
-                <PlatformCard key={src} source={src} signals={platformGroups[src]} />
-              ))}
-            </div>
-          )}
+          {/* Platform summary cards — always visible regardless of filter */}
+          <div className="social-platform-grid">
+            {youtubeSignals.length > 0 && <YouTubeCard signals={youtubeSignals} />}
+            {instagramSignals.length > 0 && <InstagramCard signals={instagramSignals} />}
+            {!hasTikTokSignals && <TikTokCard />}
+            {linkedinSignals.length > 0 && <LinkedInCard signals={linkedinSignals} />}
+            {pinterestSignals.length > 0 && <PinterestCard signals={pinterestSignals} />}
+          </div>
 
           {/* Content ideas section */}
           {ideas.length > 0 && (
@@ -427,6 +633,8 @@ export default function SocialPage() {
                   expanded={expandedId === signal.id}
                   onToggle={() => setExpandedId(expandedId === signal.id ? null : signal.id)}
                   onFeedback={handleFeedback}
+                  onDismiss={handleDismiss}
+                  isDismissed={signal.status === "dismissed"}
                 />
               )) : (
                 <div className="card empty-card">

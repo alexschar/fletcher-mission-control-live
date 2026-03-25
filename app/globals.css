@@ -635,6 +635,15 @@ tr:hover td { color: var(--text-primary); background: var(--bg-card-hover); }
 .social-metric-delta.positive { color: var(--green); }
 .social-metric-delta.negative { color: var(--red); }
 .social-platform-insight { margin-top: 10px; font-size: 13px; color: var(--text-secondary); padding-top: 10px; border-top: 1px solid var(--border); line-height: 1.5; }
+.social-platform-account { font-size: 13px; color: var(--text-muted); margin: -6px 0 10px; }
+.social-platform-pending .social-platform-header { margin-bottom: 0; }
+.social-platform-pending-body { display: flex; flex-direction: column; gap: 4px; align-items: center; padding: 16px 0 8px; text-align: center; }
+.social-platform-pending-icon { font-size: 24px; opacity: 0.5; }
+.social-platform-pending-text { font-size: 14px; color: var(--text-secondary); font-weight: 500; }
+.social-platform-pending-hint { font-size: 12px; color: var(--text-muted); }
+.social-platform-recent { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+.social-platform-recent-label { display: block; font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+.social-platform-recent-item { display: block; font-size: 13px; color: var(--text-secondary); line-height: 1.5; padding: 2px 0; }
 
 /* Section titles */
 .social-section { margin-bottom: 24px; }
