@@ -761,3 +761,36 @@ tr:hover td { color: var(--text-primary); background: var(--bg-card-hover); }
   .spending-sub-row, .spending-shop-row { flex-direction: column; }
   .spending-sub-amount, .spending-shop-amount { text-align: left; }
 }
+
+/* ===== Horoscope ===== */
+
+.horoscope-placements { display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px; }
+
+.horoscope-placement-card { padding: 20px; border-left: 4px solid var(--accent); }
+.horoscope-placement-header { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px; }
+.horoscope-placement-emoji { font-size: 28px; line-height: 1; flex-shrink: 0; }
+.horoscope-placement-info { flex: 1; min-width: 0; }
+.horoscope-placement-title { font-size: 16px; font-weight: 600; color: var(--text-primary); }
+.horoscope-placement-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.horoscope-placement-time { font-size: 11px; color: var(--text-muted); white-space: nowrap; flex-shrink: 0; }
+
+.horoscope-period-toggle { display: flex; gap: 4px; margin-bottom: 12px; }
+.horoscope-period-btn { font-size: 12px; padding: 4px 12px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--text-secondary); cursor: pointer; transition: all 0.15s; }
+.horoscope-period-btn:hover { background: var(--bg-card-hover); }
+.horoscope-period-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+.horoscope-reading { font-size: 15px; line-height: 1.7; color: var(--text-secondary); }
+.horoscope-empty { font-size: 13px; color: var(--text-muted); font-style: italic; }
+
+.horoscope-agent-note { margin-top: 14px; padding: 10px 14px; background: var(--bg-input); border-radius: 8px; }
+.horoscope-agent-label { display: block; font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; font-weight: 600; }
+.horoscope-agent-text { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
+
+/* History section */
+.horoscope-history-section { margin-top: 8px; }
+.horoscope-section-title { font-size: 14px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+.horoscope-history-card { padding: 14px 16px; }
+.horoscope-history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.horoscope-history-date { font-size: 13px; font-weight: 500; color: var(--text-secondary); }
+.horoscope-history-type { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px; }
+.horoscope-history-text { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
