@@ -30,6 +30,7 @@ function PlacementCard({ placement, signals }) {
   const weekly = signals.find((s) => s.signal_type === "weekly_horoscope");
   const latest = daily || weekly || signals[0];
   const [showWeekly, setShowWeekly] = useState(false);
+  const [expanded, setExpanded] = useState(true);
 
   if (!latest) {
     return (
@@ -47,34 +48,68 @@ function PlacementCard({ placement, signals }) {
   }
 
   const activeReading = showWeekly && weekly ? weekly : (daily || latest);
+  const bodyText = activeReading.body || "";
+  const previewText = bodyText.length > 160 ? bodyText.slice(0, 160) + "..." : bodyText;
 
   return (
     <div className="card horoscope-placement-card" style={{ borderLeftColor: placement.color }}>
-      <div className="horoscope-placement-header">
+      <button className="horoscope-placement-header horoscope-expand-btn" onClick={() => setExpanded(!expanded)} type="button">
         <span className="horoscope-placement-emoji">{placement.emoji}</span>
         <div className="horoscope-placement-info">
           <div className="horoscope-placement-title">{placement.key} in {placement.sign}</div>
           <div className="horoscope-placement-desc">{placement.description}</div>
+          {!expanded && <div className="horoscope-preview-text">{previewText}</div>}
         </div>
-        <span className="horoscope-placement-time">{formatTime(activeReading.created_at)}</span>
-      </div>
+        <div className="horoscope-placement-meta">
+          <span className="horoscope-placement-time">{formatTime(activeReading.created_at)}</span>
+          <span className="horoscope-expand-icon">{expanded ? "\u25B2" : "\u25BC"}</span>
+        </div>
+      </button>
 
-      {/* Period toggle */}
-      {daily && weekly && (
-        <div className="horoscope-period-toggle">
-          <button className={`horoscope-period-btn ${!showWeekly ? "active" : ""}`} onClick={() => setShowWeekly(false)}>Daily</button>
-          <button className={`horoscope-period-btn ${showWeekly ? "active" : ""}`} onClick={() => setShowWeekly(true)}>Weekly</button>
-        </div>
+      {expanded && (
+        <>
+          {/* Period toggle */}
+          {daily && weekly && (
+            <div className="horoscope-period-toggle">
+              <button className={`horoscope-period-btn ${!showWeekly ? "active" : ""}`} onClick={() => setShowWeekly(false)}>Daily</button>
+              <button className={`horoscope-period-btn ${showWeekly ? "active" : ""}`} onClick={() => setShowWeekly(true)}>Weekly</button>
+            </div>
+          )}
+
+          <div className="horoscope-reading">{bodyText}</div>
+
+          {/* Agent interpretation */}
+          {activeReading.agent_notes?.interpretation && (
+            <div className="horoscope-agent-note">
+              <span className="horoscope-agent-label">Agent Note</span>
+              <span className="horoscope-agent-text">{activeReading.agent_notes.interpretation}</span>
+            </div>
+          )}
+        </>
       )}
+    </div>
+  );
+}
 
-      <div className="horoscope-reading">{activeReading.body}</div>
+function HistoryCard({ signal }) {
+  const [expanded, setExpanded] = useState(false);
+  const bodyText = signal.body || "";
+  const isLong = bodyText.length > 200;
 
-      {/* Agent interpretation */}
-      {activeReading.agent_notes?.interpretation && (
-        <div className="horoscope-agent-note">
-          <span className="horoscope-agent-label">Agent Note</span>
-          <span className="horoscope-agent-text">{activeReading.agent_notes.interpretation}</span>
-        </div>
+  return (
+    <div className="card horoscope-history-card">
+      <button className="horoscope-history-header horoscope-expand-btn" onClick={() => setExpanded(!expanded)} type="button">
+        <span className="horoscope-history-date">{formatDate(signal.created_at)}</span>
+        <span className="horoscope-history-type">{signal.signal_type === "weekly_horoscope" ? "Weekly" : "Daily"}</span>
+        {isLong && <span className="horoscope-expand-icon">{expanded ? "\u25B2" : "\u25BC"}</span>}
+      </button>
+      <div className="horoscope-history-text">
+        {expanded || !isLong ? bodyText : `${bodyText.slice(0, 200)}...`}
+      </div>
+      {isLong && !expanded && (
+        <button className="horoscope-read-more" onClick={() => setExpanded(true)} type="button">
+          Read full reading
+        </button>
       )}
     </div>
   );
@@ -178,13 +213,7 @@ export default function HoroscopePage() {
               <h2 className="horoscope-section-title">Recent Readings</h2>
               <div className="section-stack">
                 {sunHistory.slice(1).map((s) => (
-                  <div key={s.id} className="card horoscope-history-card">
-                    <div className="horoscope-history-header">
-                      <span className="horoscope-history-date">{formatDate(s.created_at)}</span>
-                      <span className="horoscope-history-type">{s.signal_type === "weekly_horoscope" ? "Weekly" : "Daily"}</span>
-                    </div>
-                    <div className="horoscope-history-text">{s.body?.slice(0, 200)}{s.body?.length > 200 ? "..." : ""}</div>
-                  </div>
+                  <HistoryCard key={s.id} signal={s} />
                 ))}
               </div>
             </div>
