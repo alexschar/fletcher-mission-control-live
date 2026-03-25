@@ -14,3 +14,15 @@
 - **Agent-side: Sawyer HEARTBEAT.md** (Task 26): Add email triage heartbeat step
 - **Agent-side: feedback collection + Fletcher calibration** (Tasks 27-28): Feedback loop and weekly calibration
 - **Seed real email data**: Once email fetcher is running, verify /email page renders real signals correctly
+
+## From Sprint 3
+- **Alex-side: social-signals.js fetcher**: Extend existing social metrics poller with YouTube Data API v3, Apify for IG/TikTok, Pinterest RSS
+- **Alex-side: engagement spike thresholds**: Configure Telegram alert thresholds per platform
+- **Alex-side: Pinterest RSS setup**: Set up RSS feed fetching for tracked boards
+- **LinkedIn signals note**: LinkedIn engagement currently piggybacks on Gmail notification parsing (Sprint 2 dependency). No separate API needed.
+
+## From Sprint 4
+- **Alex-side: calendar-signals.js fetcher**: Write Google Calendar API fetcher (reuses Phase 1 OAuth), 3x daily cron
+- **Alex-side: subscription detection rules**: Configure gmail-signals.js to detect recurring charges from billing emails
+- **Finance category signals**: The /costs (Spending) page pulls from both `shopping` and `finance` categories — ensure fetchers use correct categories
+- **Shopping signal enrichment**: Amazon order parsing (order confirmations, shipping notifications) needs to extract amounts and tracking numbers into metadata

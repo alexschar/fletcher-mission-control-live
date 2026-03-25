@@ -6,7 +6,7 @@ const {
   getLifeSignalStats,
 } = require('../../../lib/supabase');
 
-const ALLOWED_CATEGORIES = ['email', 'sponsorship', 'social', 'shopping', 'calendar'];
+const ALLOWED_CATEGORIES = ['email', 'sponsorship', 'social', 'shopping', 'calendar', 'finance', 'system', 'creative'];
 const ALLOWED_PRIORITIES = ['urgent', 'high', 'normal', 'low', 'dismissed'];
 const ALLOWED_STATUSES = ['unread', 'read', 'acted_on', 'dismissed'];
 

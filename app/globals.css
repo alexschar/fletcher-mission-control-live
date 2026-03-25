@@ -674,3 +674,90 @@ tr:hover td { color: var(--text-primary); background: var(--bg-card-hover); }
   .social-signal-row { flex-wrap: wrap; }
   .social-signal-badges { width: 100%; margin-top: 4px; }
 }
+
+/* ===== Calendar ===== */
+
+.calendar-section { margin-bottom: 24px; }
+.calendar-section-title { font-size: 14px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+
+/* Free time summary */
+.calendar-free-summary { padding: 16px; margin-bottom: 16px; }
+.calendar-free-header { font-size: 13px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+.calendar-free-blocks { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+.calendar-free-block { font-size: 13px; color: var(--green); background: rgba(74,222,128,0.08); padding: 4px 10px; border-radius: 6px; }
+.calendar-no-free { font-size: 13px; color: var(--text-muted); }
+.calendar-free-total { font-size: 12px; color: var(--text-muted); }
+
+/* Conflict banner */
+.calendar-conflicts-banner { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-left: 3px solid var(--red); margin-bottom: 16px; color: var(--red); font-size: 14px; font-weight: 500; }
+.calendar-conflicts-icon { width: 22px; height: 22px; border-radius: 50%; background: var(--red); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+
+/* Event card */
+.calendar-event-card { padding: 14px 16px; transition: border-color 0.15s; }
+.calendar-event-card:hover { border-color: var(--accent-dim); }
+.calendar-conflict { border-left: 3px solid var(--red); }
+.calendar-urgent { border-left: 3px solid var(--orange); }
+.calendar-event-row { display: flex; gap: 16px; align-items: flex-start; }
+.calendar-event-time-col { min-width: 70px; flex-shrink: 0; }
+.calendar-event-start { display: block; font-size: 14px; font-weight: 600; color: var(--text-primary); }
+.calendar-event-duration { display: block; font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.calendar-all-day { font-size: 12px; color: var(--accent); font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; }
+.calendar-event-main { flex: 1; min-width: 0; }
+.calendar-event-title { font-size: 14px; font-weight: 500; color: var(--text-primary); }
+.calendar-event-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; font-size: 12px; color: var(--text-muted); }
+.calendar-event-cal { color: var(--text-secondary); }
+.calendar-event-loc { color: var(--text-muted); }
+.calendar-event-link { color: var(--accent); font-weight: 500; }
+.calendar-event-attendees { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+.calendar-event-insight { font-size: 13px; color: var(--text-secondary); margin-top: 8px; padding: 8px 10px; background: var(--bg-input); border-radius: 6px; line-height: 1.5; }
+.calendar-event-badges { display: flex; gap: 6px; flex-shrink: 0; }
+
+/* Agent insight cards */
+.calendar-insight-card { padding: 14px 16px; border-left: 3px solid var(--purple); }
+.calendar-insight-title { font-size: 13px; font-weight: 500; color: var(--text-secondary); margin-bottom: 6px; }
+.calendar-insight-text { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
+.calendar-insight-draft { font-size: 13px; color: var(--text-muted); margin-top: 6px; white-space: pre-wrap; padding: 8px 10px; background: var(--bg-input); border-radius: 6px; }
+
+.stat-pill-red { background: rgba(248,113,113,0.15); color: var(--red); }
+
+/* ===== Spending ===== */
+
+.spending-total-card { padding: 16px; margin-bottom: 16px; }
+.spending-total-row { display: flex; justify-content: space-between; align-items: center; }
+.spending-total-label { font-size: 14px; font-weight: 500; color: var(--text-secondary); }
+.spending-total-value { font-size: 24px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.5px; }
+
+.spending-insight-card { padding: 12px 16px; border-left: 3px solid var(--yellow); margin-bottom: 8px; }
+.spending-insight-text { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
+
+/* Subscription card */
+.spending-sub-card { padding: 14px 16px; }
+.spending-sub-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.spending-sub-main { flex: 1; min-width: 0; }
+.spending-sub-name { font-size: 14px; font-weight: 500; color: var(--text-primary); }
+.spending-sub-freq { font-size: 12px; color: var(--text-muted); margin-top: 2px; text-transform: capitalize; }
+.spending-sub-note { font-size: 13px; color: var(--text-secondary); margin-top: 6px; }
+.spending-sub-amount { text-align: right; flex-shrink: 0; }
+.spending-amount { font-size: 16px; font-weight: 600; color: var(--text-primary); }
+.spending-delta { display: block; font-size: 11px; margin-top: 2px; }
+.spending-delta.positive { color: var(--green); }
+.spending-delta.negative { color: var(--red); }
+
+/* Shopping card */
+.spending-shop-card { padding: 14px 16px; }
+.spending-shop-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.spending-shop-main { flex: 1; min-width: 0; }
+.spending-shop-title { font-size: 14px; font-weight: 500; color: var(--text-primary); }
+.spending-shop-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; font-size: 12px; color: var(--text-muted); }
+.spending-shop-store { color: var(--text-secondary); font-weight: 500; }
+.spending-shop-status { text-transform: capitalize; }
+.spending-shop-items { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+.spending-shop-note { font-size: 13px; color: var(--text-secondary); margin-top: 6px; }
+.spending-shop-amount { text-align: right; flex-shrink: 0; }
+
+@media (max-width: 768px) {
+  .calendar-event-row { flex-wrap: wrap; }
+  .calendar-event-time-col { min-width: auto; }
+  .spending-sub-row, .spending-shop-row { flex-direction: column; }
+  .spending-sub-amount, .spending-shop-amount { text-align: left; }
+}
