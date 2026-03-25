@@ -131,10 +131,11 @@ function PlatformCard({ source, signals }) {
 }
 
 // Signal card for the social feed
-function SocialSignalCard({ signal, onFeedback, expanded, onToggle }) {
+function SocialSignalCard({ signal, onFeedback, onDismiss, expanded, onToggle, isDismissed }) {
   const [feedbackNote, setFeedbackNote] = useState(signal.feedback_note || "");
   const [showFeedbackInput, setShowFeedbackInput] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [dismissing, setDismissing] = useState(false);
 
   const typeInfo = SIGNAL_TYPES[signal.signal_type] || { label: signal.signal_type?.replace(/_/g, " "), color: "var(--text-muted)", bg: "rgba(85,85,106,0.12)" };
   const meta = signal.metadata || {};
@@ -148,8 +149,15 @@ function SocialSignalCard({ signal, onFeedback, expanded, onToggle }) {
     setShowFeedbackInput(false);
   }
 
+  async function handleDismiss(e) {
+    e.stopPropagation();
+    setDismissing(true);
+    setTimeout(() => onDismiss(signal.id), 400);
+  }
+
   return (
-    <div className={`card social-signal-card ${expanded ? "social-signal-expanded" : ""} ${isIdea ? "social-idea-card" : ""}`} data-priority={signal.priority}>
+    <div className={`card social-signal-card card-dismissable ${expanded ? "social-signal-expanded" : ""} ${isIdea ? "social-idea-card" : ""} ${dismissing ? "card-dismissing" : ""} ${isDismissed ? "card-dismissed-muted" : ""}`} data-priority={signal.priority}>
+      {!isDismissed && <button className="dismiss-btn" onClick={handleDismiss} title="Dismiss signal">{"\u2715"}</button>}
       <div className="social-signal-row" onClick={onToggle}>
         <div className="social-signal-source" style={{ color }}>{signal.source}</div>
         <div className="social-signal-main">
@@ -245,11 +253,13 @@ export default function SocialPage() {
   const [error, setError] = useState(null);
   const [platform, setPlatform] = useState("all");
   const [expandedId, setExpandedId] = useState(null);
+  const [showDismissed, setShowDismissed] = useState(false);
 
   const fetchSignals = useCallback(async () => {
     try {
       const params = new URLSearchParams();
       params.set("category", "social");
+      if (!showDismissed) params.set("exclude_dismissed", "true");
       params.set("limit", "100");
       const res = await fetch(`/api/life-signals?${params}`, { headers: getAuthHeaders() });
       if (!res.ok) throw new Error(`Failed to fetch: ${res.status}`);
@@ -263,7 +273,7 @@ export default function SocialPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [showDismissed]);
 
   useEffect(() => {
     fetchSignals();
@@ -283,6 +293,25 @@ export default function SocialPage() {
       setSignals((prev) => prev.map((s) => (s.id === id ? updated : s)));
     } catch (err) {
       console.error("Feedback error:", err);
+    }
+  }
+
+  async function handleDismiss(id) {
+    try {
+      const res = await fetch(`/api/life-signals/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+        body: JSON.stringify({ status: "dismissed" }),
+      });
+      if (!res.ok) throw new Error("Failed to dismiss");
+      if (showDismissed) {
+        const updated = await res.json();
+        setSignals((prev) => prev.map((s) => (s.id === id ? updated : s)));
+      } else {
+        setSignals((prev) => prev.filter((s) => s.id !== id));
+      }
+    } catch (err) {
+      console.error("Dismiss error:", err);
     }
   }
 
@@ -332,6 +361,10 @@ export default function SocialPage() {
             </button>
           ))}
         </div>
+        <button className="dismiss-toggle" onClick={() => { setShowDismissed(!showDismissed); setLoading(true); }}>
+          <span className={`dismiss-toggle-dot ${showDismissed ? "active" : ""}`} />
+          {showDismissed ? "Showing dismissed" : "Show dismissed"}
+        </button>
       </div>
 
       {loading ? (
@@ -375,6 +408,8 @@ export default function SocialPage() {
                     expanded={expandedId === signal.id}
                     onToggle={() => setExpandedId(expandedId === signal.id ? null : signal.id)}
                     onFeedback={handleFeedback}
+                    onDismiss={handleDismiss}
+                    isDismissed={signal.status === "dismissed"}
                   />
                 ))}
               </div>

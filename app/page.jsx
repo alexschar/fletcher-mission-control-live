@@ -39,10 +39,11 @@ function categoryIcon(cat) {
   }
 }
 
-function SignalCard({ signal, onFeedback }) {
+function SignalCard({ signal, onFeedback, onDismiss, isDismissed }) {
   const [showFeedbackNote, setShowFeedbackNote] = useState(false);
   const [feedbackNote, setFeedbackNote] = useState(signal.feedback_note || "");
   const [submitting, setSubmitting] = useState(false);
+  const [dismissing, setDismissing] = useState(false);
 
   async function handleFeedback(value) {
     setSubmitting(true);
@@ -51,11 +52,18 @@ function SignalCard({ signal, onFeedback }) {
     setShowFeedbackNote(false);
   }
 
+  async function handleDismiss(e) {
+    e.stopPropagation();
+    setDismissing(true);
+    setTimeout(() => onDismiss(signal.id), 400);
+  }
+
   const triageLabel = signal.agent_notes?.triage;
   const hasDraft = !!signal.agent_draft;
 
   return (
-    <div className="card life-signal-card" data-priority={signal.priority} data-status={signal.status}>
+    <div className={`card life-signal-card card-dismissable ${dismissing ? "card-dismissing" : ""} ${isDismissed ? "card-dismissed-muted" : ""}`} data-priority={signal.priority} data-status={signal.status}>
+      {!isDismissed && <button className="dismiss-btn" onClick={handleDismiss} title="Dismiss signal">{"\u2715"}</button>}
       <div className="signal-header">
         <span className="signal-icon">{categoryIcon(signal.category)}</span>
         <div className="signal-meta">
@@ -124,12 +132,14 @@ export default function LifeFeedPage() {
   const [category, setCategory] = useState("all");
   const [status, setStatus] = useState("all");
   const [error, setError] = useState(null);
+  const [showDismissed, setShowDismissed] = useState(false);
 
   const fetchSignals = useCallback(async () => {
     try {
       const params = new URLSearchParams();
       if (category !== "all") params.set("category", category);
       if (status !== "all") params.set("status", status);
+      else if (!showDismissed) params.set("exclude_dismissed", "true");
       params.set("limit", "50");
 
       const res = await fetch(`/api/life-signals?${params}`, { headers: getAuthHeaders() });
@@ -143,7 +153,7 @@ export default function LifeFeedPage() {
     } finally {
       setLoading(false);
     }
-  }, [category, status]);
+  }, [category, status, showDismissed]);
 
   const fetchStats = useCallback(async () => {
     try {
@@ -174,6 +184,26 @@ export default function LifeFeedPage() {
       fetchStats();
     } catch (err) {
       console.error("Feedback error:", err);
+    }
+  }
+
+  async function handleDismiss(id) {
+    try {
+      const res = await fetch(`/api/life-signals/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+        body: JSON.stringify({ status: "dismissed" }),
+      });
+      if (!res.ok) throw new Error("Failed to dismiss");
+      if (showDismissed) {
+        const updated = await res.json();
+        setSignals((prev) => prev.map((s) => (s.id === id ? updated : s)));
+      } else {
+        setSignals((prev) => prev.filter((s) => s.id !== id));
+      }
+      fetchStats();
+    } catch (err) {
+      console.error("Dismiss error:", err);
     }
   }
 
@@ -210,6 +240,10 @@ export default function LifeFeedPage() {
             <option key={s} value={s}>{s === "all" ? "All statuses" : s.replace(/_/g, " ")}</option>
           ))}
         </select>
+        <button className="dismiss-toggle" onClick={() => { setShowDismissed(!showDismissed); setLoading(true); }}>
+          <span className={`dismiss-toggle-dot ${showDismissed ? "active" : ""}`} />
+          {showDismissed ? "Showing dismissed" : "Show dismissed"}
+        </button>
       </div>
 
       {loading ? (
@@ -234,7 +268,7 @@ export default function LifeFeedPage() {
       ) : (
         <div className="section-stack">
           {signals.map((signal) => (
-            <SignalCard key={signal.id} signal={signal} onFeedback={handleFeedback} />
+            <SignalCard key={signal.id} signal={signal} onFeedback={handleFeedback} onDismiss={handleDismiss} isDismissed={signal.status === "dismissed"} />
           ))}
         </div>
       )}

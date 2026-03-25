@@ -44,12 +44,13 @@ function priorityColor(p) {
   }
 }
 
-function EmailCard({ signal, onFeedback, onDraftUpdate, expanded, onToggle }) {
+function EmailCard({ signal, onFeedback, onDraftUpdate, onDismiss, expanded, onToggle, isDismissed }) {
   const [feedbackNote, setFeedbackNote] = useState(signal.feedback_note || "");
   const [showFeedbackInput, setShowFeedbackInput] = useState(false);
   const [draftText, setDraftText] = useState(signal.agent_draft || "");
   const [editingDraft, setEditingDraft] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [dismissing, setDismissing] = useState(false);
 
   const triage = signal.agent_notes?.triage;
   const triageStyle = TRIAGE_BADGES[triage] || TRIAGE_BADGES.routine;
@@ -98,8 +99,15 @@ function EmailCard({ signal, onFeedback, onDraftUpdate, expanded, onToggle }) {
     setSubmitting(false);
   }
 
+  async function handleDismiss(e) {
+    e.stopPropagation();
+    setDismissing(true);
+    setTimeout(() => onDismiss(signal.id), 400);
+  }
+
   return (
-    <div className={`card email-card ${expanded ? "email-card-expanded" : ""}`} data-priority={signal.priority} data-status={signal.status}>
+    <div className={`card email-card card-dismissable ${expanded ? "email-card-expanded" : ""} ${dismissing ? "card-dismissing" : ""} ${isDismissed ? "card-dismissed-muted" : ""}`} data-priority={signal.priority} data-status={signal.status}>
+      {!isDismissed && <button className="dismiss-btn" onClick={handleDismiss} title="Dismiss email">{"\u2715"}</button>}
       {/* Compact row */}
       <div className="email-card-row" onClick={onToggle}>
         <div className="email-card-status-col">
@@ -288,6 +296,7 @@ export default function EmailPage() {
   const [category, setCategory] = useState("all");
   const [status, setStatus] = useState("all");
   const [expandedId, setExpandedId] = useState(null);
+  const [showDismissed, setShowDismissed] = useState(false);
 
   const STATUSES = ["all", "unread", "read", "acted_on", "dismissed"];
 
@@ -299,6 +308,7 @@ export default function EmailPage() {
       else if (category === "sponsorship") params.set("category", "sponsorship");
       // If "all", we fetch both — filter client-side
       if (status !== "all") params.set("status", status);
+      else if (!showDismissed) params.set("exclude_dismissed", "true");
       params.set("limit", "100");
 
       const res = await fetch(`/api/life-signals?${params}`, { headers: getAuthHeaders() });
@@ -317,7 +327,7 @@ export default function EmailPage() {
     } finally {
       setLoading(false);
     }
-  }, [category, status]);
+  }, [category, status, showDismissed]);
 
   const fetchStats = useCallback(async () => {
     try {
@@ -346,6 +356,26 @@ export default function EmailPage() {
       fetchStats();
     } catch (err) {
       console.error("Feedback error:", err);
+    }
+  }
+
+  async function handleDismiss(id) {
+    try {
+      const res = await fetch(`/api/life-signals/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+        body: JSON.stringify({ status: "dismissed" }),
+      });
+      if (!res.ok) throw new Error("Failed to dismiss");
+      if (showDismissed) {
+        const updated = await res.json();
+        setSignals((prev) => prev.map((s) => (s.id === id ? updated : s)));
+      } else {
+        setSignals((prev) => prev.filter((s) => s.id !== id));
+      }
+      fetchStats();
+    } catch (err) {
+      console.error("Dismiss error:", err);
     }
   }
 
@@ -399,6 +429,10 @@ export default function EmailPage() {
             <option key={s} value={s}>{s === "all" ? "All statuses" : s.replace(/_/g, " ")}</option>
           ))}
         </select>
+        <button className="dismiss-toggle" onClick={() => { setShowDismissed(!showDismissed); setLoading(true); }}>
+          <span className={`dismiss-toggle-dot ${showDismissed ? "active" : ""}`} />
+          {showDismissed ? "Showing dismissed" : "Show dismissed"}
+        </button>
       </div>
 
       {loading ? (
@@ -429,6 +463,8 @@ export default function EmailPage() {
               onToggle={() => setExpandedId(expandedId === signal.id ? null : signal.id)}
               onFeedback={handleFeedback}
               onDraftUpdate={handleDraftUpdate}
+              onDismiss={handleDismiss}
+              isDismissed={signal.status === "dismissed"}
             />
           ))}
         </div>

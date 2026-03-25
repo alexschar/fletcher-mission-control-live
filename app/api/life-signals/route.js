@@ -28,6 +28,7 @@ export async function GET(request) {
     const limit = searchParams.get('limit');
     const since = searchParams.get('since');
     const hasFeedback = searchParams.get('has_feedback');
+    const excludeDismissed = searchParams.get('exclude_dismissed');
 
     if (status) {
       if (!ALLOWED_STATUSES.includes(status)) {
@@ -53,6 +54,7 @@ export async function GET(request) {
     if (priority) filters.priority = priority;
     if (limit) filters.limit = limit;
     if (hasFeedback) filters.has_feedback = hasFeedback;
+    if (excludeDismissed === 'true') filters.exclude_dismissed = true;
 
     if (since) {
       const date = new Date(since);

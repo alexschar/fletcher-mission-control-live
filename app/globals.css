@@ -802,3 +802,22 @@ tr:hover td { color: var(--text-primary); background: var(--bg-card-hover); }
 .horoscope-history-text { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
 .horoscope-read-more { display: inline-block; margin-top: 8px; padding: 0; background: none; border: none; color: var(--accent); font-size: 13px; cursor: pointer; font-family: inherit; }
 .horoscope-read-more:hover { text-decoration: underline; }
+
+/* ==================== Dismiss Button ==================== */
+.dismiss-btn { position: absolute; top: 8px; right: 8px; background: none; border: none; color: var(--text-muted); font-size: 16px; line-height: 1; padding: 4px 6px; border-radius: 4px; cursor: pointer; opacity: 0.4; transition: opacity 0.15s, background 0.15s; z-index: 2; font-family: inherit; }
+.dismiss-btn:hover { opacity: 1; background: rgba(255,255,255,0.06); }
+.card-dismissable { position: relative; }
+.dismiss-toggle { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); cursor: pointer; background: none; border: none; padding: 4px 8px; border-radius: 6px; font-family: inherit; transition: color 0.15s; white-space: nowrap; }
+.dismiss-toggle:hover { color: var(--text-secondary); }
+.dismiss-toggle-dot { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--text-muted); display: inline-block; }
+.dismiss-toggle-dot.active { background: var(--text-muted); }
+
+/* Dismiss animation */
+@keyframes dismissFade {
+  0% { opacity: 1; transform: translateX(0); max-height: 500px; margin-bottom: 12px; }
+  60% { opacity: 0; transform: translateX(40px); max-height: 500px; margin-bottom: 12px; }
+  100% { opacity: 0; transform: translateX(40px); max-height: 0; margin-bottom: 0; overflow: hidden; }
+}
+.card-dismissing { animation: dismissFade 0.4s ease forwards; pointer-events: none; }
+.card-dismissed-muted { opacity: 0.45; }
+.card-dismissed-muted .dismiss-btn { display: none; }
