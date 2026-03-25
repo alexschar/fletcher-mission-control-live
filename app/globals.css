@@ -18,7 +18,8 @@
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
-html, body { height: 100%; background: var(--bg-primary); color: var(--text-primary); font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif; }
+html { height: 100%; }
+body { min-height: 100%; background: var(--bg-primary); color: var(--text-primary); font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif; }
 body { overflow-x: hidden; }
 a { color: var(--accent); text-decoration: none; overflow-wrap: anywhere; }
 a:hover { text-decoration: underline; }
@@ -567,3 +568,51 @@ tr:hover td { color: var(--text-primary); background: var(--bg-card-hover); }
 .feedback-item-value { font-weight: 600; }
 .feedback-item-time { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
 .accuracy-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+
+/* ==================== Email Triage ==================== */
+.email-card { padding: 0; overflow: hidden; transition: border-color 0.15s; }
+.email-card:hover { border-color: var(--accent-dim); }
+.email-card[data-status="unread"] { border-left: 3px solid var(--accent); }
+.email-card[data-priority="urgent"] { border-left: 3px solid var(--red); }
+.email-card[data-priority="high"] { border-left: 3px solid var(--orange); }
+.email-card-expanded { border-color: var(--accent-dim); }
+
+.email-card-row { display: flex; align-items: flex-start; gap: 12px; padding: 14px 20px; cursor: pointer; transition: background 0.1s; }
+.email-card-row:hover { background: var(--bg-card-hover); }
+.email-card-status-col { width: 12px; flex-shrink: 0; padding-top: 6px; }
+.email-unread-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+.email-card-main { flex: 1; min-width: 0; }
+.email-card-top { display: flex; gap: 8px; align-items: center; margin-bottom: 2px; }
+.email-sender { font-size: 13px; font-weight: 600; color: var(--text-primary); text-transform: capitalize; }
+.email-cat-tag { font-size: 10px; padding: 1px 8px; border-radius: 4px; background: rgba(251,191,36,0.12); color: var(--yellow); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+.email-time { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+.email-subject { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.email-preview { font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.email-card-badges { display: flex; gap: 6px; flex-shrink: 0; align-items: flex-start; padding-top: 2px; }
+.email-triage-badge { font-size: 11px; padding: 3px 10px; border-radius: 12px; font-weight: 600; }
+
+/* Email detail (expanded) */
+.email-card-detail { padding: 0 20px 20px; border-top: 1px solid var(--border); }
+.email-body { font-size: 13px; color: var(--text-secondary); line-height: 1.65; padding: 16px 0; overflow-wrap: anywhere; white-space: pre-wrap; }
+
+/* Agent triage panel */
+.email-triage-panel { background: var(--bg-card-hover); border-radius: 8px; padding: 14px; margin-bottom: 16px; }
+.email-triage-header { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); font-weight: 600; margin-bottom: 10px; }
+.email-triage-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; }
+.email-triage-item { display: flex; flex-direction: column; gap: 2px; }
+.email-triage-item.full { grid-column: 1 / -1; }
+.email-triage-label { font-size: 11px; color: var(--text-muted); font-weight: 500; }
+.email-triage-value { font-size: 13px; color: var(--text-primary); }
+.email-red-flags { color: var(--red); }
+
+/* Draft section */
+.email-draft-section { margin-bottom: 16px; }
+.email-draft-header { display: flex; justify-content: space-between; align-items: center; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); font-weight: 600; margin-bottom: 8px; }
+.email-draft-preview { font-size: 13px; color: var(--text-secondary); line-height: 1.6; padding: 12px; background: var(--bg-card-hover); border-radius: 8px; white-space: pre-wrap; }
+.email-draft-empty { font-size: 12px; color: var(--text-muted); font-style: italic; }
+.email-draft-editor { display: grid; gap: 8px; }
+.email-draft-actions { display: flex; gap: 8px; }
+
+/* Email feedback */
+.email-feedback-section { padding-top: 12px; border-top: 1px solid var(--border); }
+.email-feedback-actions { display: flex; gap: 8px; align-items: center; }
