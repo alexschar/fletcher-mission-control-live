@@ -1,6 +1,8 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { getAuthHeaders } from "../../lib/api-client";
+import { useLivePolling } from "../../lib/use-live-polling";
+import LiveHeader from "../components/LiveHeader";
 
 const EMAIL_CATEGORIES = [
   { key: "all", label: "All Emails", icon: "\u2709\uFE0F" },
@@ -44,7 +46,7 @@ function priorityColor(p) {
   }
 }
 
-function EmailCard({ signal, onFeedback, onDraftUpdate, onDismiss, expanded, onToggle, isDismissed }) {
+function EmailCard({ signal, onFeedback, onDraftUpdate, onDismiss, expanded, onToggle, isDismissed, isNew }) {
   const [feedbackNote, setFeedbackNote] = useState(signal.feedback_note || "");
   const [showFeedbackInput, setShowFeedbackInput] = useState(false);
   const [draftText, setDraftText] = useState(signal.agent_draft || "");
@@ -106,7 +108,7 @@ function EmailCard({ signal, onFeedback, onDraftUpdate, onDismiss, expanded, onT
   }
 
   return (
-    <div className={`card email-card card-dismissable ${expanded ? "email-card-expanded" : ""} ${dismissing ? "card-dismissing" : ""} ${isDismissed ? "card-dismissed-muted" : ""}`} data-priority={signal.priority} data-status={signal.status}>
+    <div className={`card email-card card-dismissable ${expanded ? "email-card-expanded" : ""} ${dismissing ? "card-dismissing" : ""} ${isDismissed ? "card-dismissed-muted" : ""} ${isNew ? "card-new" : ""}`} data-priority={signal.priority} data-status={signal.status}>
       {!isDismissed && <button className="dismiss-btn" onClick={handleDismiss} title="Dismiss email">{"\u2715"}</button>}
       {/* Compact row */}
       <div className="email-card-row" onClick={onToggle}>
@@ -289,71 +291,46 @@ function EmailCard({ signal, onFeedback, onDraftUpdate, onDismiss, expanded, onT
 }
 
 export default function EmailPage() {
-  const [signals, setSignals] = useState([]);
-  const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [category, setCategory] = useState("all");
   const [status, setStatus] = useState("all");
   const [expandedId, setExpandedId] = useState(null);
   const [showDismissed, setShowDismissed] = useState(false);
+  const feedTopRef = useRef(null);
 
   const STATUSES = ["all", "unread", "read", "acted_on", "dismissed"];
 
-  const fetchSignals = useCallback(async () => {
-    try {
-      const params = new URLSearchParams();
-      // Filter to email + sponsorship categories
-      if (category === "email") params.set("category", "email");
-      else if (category === "sponsorship") params.set("category", "sponsorship");
-      // If "all", we fetch both — filter client-side
-      if (status !== "all") params.set("status", status);
-      else if (!showDismissed) params.set("exclude_dismissed", "true");
-      params.set("limit", "100");
-
-      const res = await fetch(`/api/life-signals?${params}`, { headers: getAuthHeaders() });
-      if (!res.ok) throw new Error(`Failed to fetch: ${res.status}`);
-      let data = await res.json();
-      data = Array.isArray(data) ? data : [];
-      // If "all" category, filter to email+sponsorship only
-      if (category === "all") {
-        data = data.filter((s) => s.category === "email" || s.category === "sponsorship");
-      }
-      setSignals(data);
-      setError(null);
-    } catch (err) {
-      console.error("Failed to load emails:", err);
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+  const fetchFn = useCallback(async () => {
+    const params = new URLSearchParams();
+    if (category === "email") params.set("category", "email");
+    else if (category === "sponsorship") params.set("category", "sponsorship");
+    if (status !== "all") params.set("status", status);
+    else if (!showDismissed) params.set("exclude_dismissed", "true");
+    params.set("limit", "100");
+    const res = await fetch(`/api/life-signals?${params}`, { headers: getAuthHeaders() });
+    if (!res.ok) throw new Error(`Failed to fetch: ${res.status}`);
+    let data = await res.json();
+    data = Array.isArray(data) ? data : [];
+    if (category === "all") data = data.filter((s) => s.category === "email" || s.category === "sponsorship");
+    return data;
   }, [category, status, showDismissed]);
 
-  const fetchStats = useCallback(async () => {
-    try {
-      const res = await fetch("/api/life-signals?stats=true", { headers: getAuthHeaders() });
-      if (res.ok) setStats(await res.json());
-    } catch { /* non-critical */ }
-  }, []);
-
-  useEffect(() => {
-    fetchSignals();
-    fetchStats();
-    const interval = setInterval(() => { fetchSignals(); fetchStats(); }, 30000);
-    return () => clearInterval(interval);
-  }, [fetchSignals, fetchStats]);
+  const {
+    data: signals,
+    loading,
+    error,
+    newCount,
+    clearNew,
+    isNew,
+    lastRefreshed,
+  } = useLivePolling(fetchFn, { interval: 30000 });
 
   async function handleFeedback(id, update) {
     try {
-      const res = await fetch(`/api/life-signals/${id}`, {
+      await fetch(`/api/life-signals/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify(update),
       });
-      if (!res.ok) throw new Error("Failed to update");
-      const updated = await res.json();
-      setSignals((prev) => prev.map((s) => (s.id === id ? updated : s)));
-      fetchStats();
     } catch (err) {
       console.error("Feedback error:", err);
     }
@@ -361,22 +338,19 @@ export default function EmailPage() {
 
   async function handleDismiss(id) {
     try {
-      const res = await fetch(`/api/life-signals/${id}`, {
+      await fetch(`/api/life-signals/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify({ status: "dismissed" }),
       });
-      if (!res.ok) throw new Error("Failed to dismiss");
-      if (showDismissed) {
-        const updated = await res.json();
-        setSignals((prev) => prev.map((s) => (s.id === id ? updated : s)));
-      } else {
-        setSignals((prev) => prev.filter((s) => s.id !== id));
-      }
-      fetchStats();
     } catch (err) {
       console.error("Dismiss error:", err);
     }
+  }
+
+  function scrollToNew() {
+    feedTopRef.current?.scrollIntoView({ behavior: "smooth" });
+    clearNew();
   }
 
   async function handleDraftUpdate(id, draftText) {
@@ -387,8 +361,6 @@ export default function EmailPage() {
         body: JSON.stringify({ agent_draft: draftText }),
       });
       if (!res.ok) throw new Error("Failed to save draft");
-      const updated = await res.json();
-      setSignals((prev) => prev.map((s) => (s.id === id ? updated : s)));
     } catch (err) {
       console.error("Draft save error:", err);
     }
@@ -412,28 +384,32 @@ export default function EmailPage() {
         </div>
       </div>
 
+      <LiveHeader lastRefreshed={lastRefreshed} newCount={newCount} onClickNew={scrollToNew} />
+
       <div className="life-feed-filters">
         <div className="filter-chips">
           {EMAIL_CATEGORIES.map((cat) => (
             <button
               key={cat.key}
               className={`chip ${category === cat.key ? "chip-active" : ""}`}
-              onClick={() => { setCategory(cat.key); setLoading(true); }}
+              onClick={() => setCategory(cat.key)}
             >
               {cat.icon} {cat.label}
             </button>
           ))}
         </div>
-        <select className="select" style={{ width: "auto", minWidth: 120 }} value={status} onChange={(e) => { setStatus(e.target.value); setLoading(true); }}>
+        <select className="select" style={{ width: "auto", minWidth: 120 }} value={status} onChange={(e) => setStatus(e.target.value)}>
           {STATUSES.map((s) => (
             <option key={s} value={s}>{s === "all" ? "All statuses" : s.replace(/_/g, " ")}</option>
           ))}
         </select>
-        <button className="dismiss-toggle" onClick={() => { setShowDismissed(!showDismissed); setLoading(true); }}>
+        <button className="dismiss-toggle" onClick={() => setShowDismissed(!showDismissed)}>
           <span className={`dismiss-toggle-dot ${showDismissed ? "active" : ""}`} />
           {showDismissed ? "Showing dismissed" : "Show dismissed"}
         </button>
       </div>
+
+      <div ref={feedTopRef} />
 
       {loading ? (
         <div className="section-stack">
@@ -465,6 +441,7 @@ export default function EmailPage() {
               onDraftUpdate={handleDraftUpdate}
               onDismiss={handleDismiss}
               isDismissed={signal.status === "dismissed"}
+              isNew={isNew(signal.id)}
             />
           ))}
         </div>

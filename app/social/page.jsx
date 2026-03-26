@@ -1,6 +1,8 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { getAuthHeaders } from "../../lib/api-client";
+import { useLivePolling } from "../../lib/use-live-polling";
+import LiveHeader from "../components/LiveHeader";
 
 const PLATFORMS = [
   { key: "all", label: "All Platforms", icon: "\uD83D\uDCCA" },
@@ -286,7 +288,7 @@ function LinkedInCard({ signals }) {
 
 // ==================== Signal Card (for feed) ====================
 
-function SocialSignalCard({ signal, onFeedback, onDismiss, expanded, onToggle, isDismissed }) {
+function SocialSignalCard({ signal, onFeedback, onDismiss, expanded, onToggle, isDismissed, isNew }) {
   const [feedbackNote, setFeedbackNote] = useState(signal.feedback_note || "");
   const [showFeedbackInput, setShowFeedbackInput] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -311,7 +313,7 @@ function SocialSignalCard({ signal, onFeedback, onDismiss, expanded, onToggle, i
   }
 
   return (
-    <div className={`card social-signal-card card-dismissable ${expanded ? "social-signal-expanded" : ""} ${isIdea ? "social-idea-card" : ""} ${dismissing ? "card-dismissing" : ""} ${isDismissed ? "card-dismissed-muted" : ""}`} data-priority={signal.priority}>
+    <div className={`card social-signal-card card-dismissable ${expanded ? "social-signal-expanded" : ""} ${isIdea ? "social-idea-card" : ""} ${dismissing ? "card-dismissing" : ""} ${isDismissed ? "card-dismissed-muted" : ""} ${isNew ? "card-new" : ""}`} data-priority={signal.priority}>
       {!isDismissed && <button className="dismiss-btn" onClick={handleDismiss} title="Dismiss signal">{"\u2715"}</button>}
       <div className="social-signal-row" onClick={onToggle}>
         <div className="social-signal-source" style={{ color }}>{signal.source}</div>
@@ -405,80 +407,57 @@ function SocialSignalCard({ signal, onFeedback, onDismiss, expanded, onToggle, i
 // ==================== Main Page ====================
 
 export default function SocialPage() {
-  const [socialSignals, setSocialSignals] = useState([]);
-  const [pinterestSignals, setPinterestSignals] = useState([]);
-  const [linkedinSignals, setLinkedinSignals] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [platform, setPlatform] = useState("all");
   const [expandedId, setExpandedId] = useState(null);
   const [showDismissed, setShowDismissed] = useState(false);
+  const feedTopRef = useRef(null);
 
-  // Fetch from all 3 sources
-  const fetchSignals = useCallback(async () => {
-    try {
-      const dismissed = showDismissed ? "" : "&exclude_dismissed=true";
+  const fetchFn = useCallback(async () => {
+    const dismissed = showDismissed ? "" : "&exclude_dismissed=true";
 
-      // 1. Social category (YouTube, Instagram, TikTok, etc.)
-      const socialRes = fetch(`/api/life-signals?category=social&limit=100${dismissed}`, { headers: getAuthHeaders() });
+    const [sRes, pRes, lRes] = await Promise.all([
+      fetch(`/api/life-signals?category=social&limit=100${dismissed}`, { headers: getAuthHeaders() }),
+      fetch(`/api/life-signals?category=creative&source=pinterest&limit=50${dismissed}`, { headers: getAuthHeaders() }),
+      fetch(`/api/life-signals?category=email&source=gmail&limit=100${dismissed}`, { headers: getAuthHeaders() }),
+    ]);
 
-      // 2. Creative category for Pinterest (source=pinterest)
-      const pinterestRes = fetch(`/api/life-signals?category=creative&source=pinterest&limit=50${dismissed}`, { headers: getAuthHeaders() });
+    if (!sRes.ok) throw new Error(`Social fetch failed: ${sRes.status}`);
 
-      // 3. LinkedIn signals from Gmail (source filtering not possible via category, so fetch and filter client-side)
-      const linkedinRes = fetch(`/api/life-signals?category=email&source=gmail&limit=100${dismissed}`, { headers: getAuthHeaders() });
+    const socialRaw = await sRes.json();
+    const pinterestRaw = pRes.ok ? await pRes.json() : [];
+    const linkedinRaw = lRes.ok ? await lRes.json() : [];
 
-      const [sRes, pRes, lRes] = await Promise.all([socialRes, pinterestRes, linkedinRes]);
+    const social = Array.isArray(socialRaw) ? socialRaw : [];
+    const pinterest = Array.isArray(pinterestRaw) ? pinterestRaw : [];
+    const linkedin = (Array.isArray(linkedinRaw) ? linkedinRaw : []).filter((s) =>
+      s.signal_type?.startsWith("linkedin_")
+    );
 
-      if (!sRes.ok) throw new Error(`Social fetch failed: ${sRes.status}`);
-      const sData = await sRes.json();
-      setSocialSignals(Array.isArray(sData) ? sData : []);
+    // Tag each signal with its source group for later filtering
+    social.forEach((s) => { s._group = "social"; });
+    pinterest.forEach((s) => { s._group = "pinterest"; });
+    linkedin.forEach((s) => { s._group = "linkedin"; });
 
-      if (pRes.ok) {
-        const pData = await pRes.json();
-        setPinterestSignals(Array.isArray(pData) ? pData : []);
-      }
-
-      if (lRes.ok) {
-        const lData = await lRes.json();
-        const liSignals = (Array.isArray(lData) ? lData : []).filter((s) =>
-          s.signal_type?.startsWith("linkedin_")
-        );
-        setLinkedinSignals(liSignals);
-      }
-
-      setError(null);
-    } catch (err) {
-      console.error("Failed to load social signals:", err);
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+    return [...social, ...pinterest, ...linkedin].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
   }, [showDismissed]);
 
-  useEffect(() => {
-    fetchSignals();
-    const interval = setInterval(fetchSignals, 30000);
-    return () => clearInterval(interval);
-  }, [fetchSignals]);
-
-  // Combined signals for the feed list (all sources)
-  const allSignals = [...socialSignals, ...pinterestSignals, ...linkedinSignals]
-    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  const {
+    data: allSignals,
+    loading,
+    error,
+    newCount,
+    clearNew,
+    isNew,
+    lastRefreshed,
+  } = useLivePolling(fetchFn, { interval: 300000 }); // 5 minutes
 
   async function handleFeedback(id, update) {
     try {
-      const res = await fetch(`/api/life-signals/${id}`, {
+      await fetch(`/api/life-signals/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify(update),
       });
-      if (!res.ok) throw new Error("Failed to update");
-      const updated = await res.json();
-      const updater = (prev) => prev.map((s) => (s.id === id ? updated : s));
-      setSocialSignals(updater);
-      setPinterestSignals(updater);
-      setLinkedinSignals(updater);
     } catch (err) {
       console.error("Feedback error:", err);
     }
@@ -486,30 +465,26 @@ export default function SocialPage() {
 
   async function handleDismiss(id) {
     try {
-      const res = await fetch(`/api/life-signals/${id}`, {
+      await fetch(`/api/life-signals/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify({ status: "dismissed" }),
       });
-      if (!res.ok) throw new Error("Failed to dismiss");
-      if (showDismissed) {
-        const updated = await res.json();
-        const updater = (prev) => prev.map((s) => (s.id === id ? updated : s));
-        setSocialSignals(updater);
-        setPinterestSignals(updater);
-        setLinkedinSignals(updater);
-      } else {
-        const remover = (prev) => prev.filter((s) => s.id !== id);
-        setSocialSignals(remover);
-        setPinterestSignals(remover);
-        setLinkedinSignals(remover);
-      }
     } catch (err) {
       console.error("Dismiss error:", err);
     }
   }
 
-  // Group social signals by platform for summary cards
+  function scrollToNew() {
+    feedTopRef.current?.scrollIntoView({ behavior: "smooth" });
+    clearNew();
+  }
+
+  // Derive platform-specific arrays from combined data
+  const socialSignals = allSignals.filter((s) => s._group === "social");
+  const pinterestSignals = allSignals.filter((s) => s._group === "pinterest");
+  const linkedinSignals = allSignals.filter((s) => s._group === "linkedin");
+
   const youtubeSignals = socialSignals.filter((s) => s.source === "youtube");
   const instagramSignals = socialSignals.filter((s) => s.source === "instagram");
   const hasTikTokSignals = socialSignals.some((s) => s.source === "tiktok");
@@ -554,6 +529,8 @@ export default function SocialPage() {
         </div>
       </div>
 
+      <LiveHeader lastRefreshed={lastRefreshed} newCount={newCount} onClickNew={scrollToNew} />
+
       {/* Platform filter chips — filter the feed list only, not summary cards */}
       <div className="life-feed-filters">
         <div className="filter-chips">
@@ -567,11 +544,13 @@ export default function SocialPage() {
             </button>
           ))}
         </div>
-        <button className="dismiss-toggle" onClick={() => { setShowDismissed(!showDismissed); setLoading(true); }}>
+        <button className="dismiss-toggle" onClick={() => setShowDismissed(!showDismissed)}>
           <span className={`dismiss-toggle-dot ${showDismissed ? "active" : ""}`} />
           {showDismissed ? "Showing dismissed" : "Show dismissed"}
         </button>
       </div>
+
+      <div ref={feedTopRef} />
 
       {loading ? (
         <div className="section-stack">
@@ -616,6 +595,7 @@ export default function SocialPage() {
                     onFeedback={handleFeedback}
                     onDismiss={handleDismiss}
                     isDismissed={signal.status === "dismissed"}
+                    isNew={isNew(signal.id)}
                   />
                 ))}
               </div>
@@ -635,6 +615,7 @@ export default function SocialPage() {
                   onFeedback={handleFeedback}
                   onDismiss={handleDismiss}
                   isDismissed={signal.status === "dismissed"}
+                  isNew={isNew(signal.id)}
                 />
               )) : (
                 <div className="card empty-card">

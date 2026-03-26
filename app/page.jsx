@@ -1,6 +1,8 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { getAuthHeaders } from "../lib/api-client";
+import { useLivePolling } from "../lib/use-live-polling";
+import LiveHeader from "./components/LiveHeader";
 
 const CATEGORIES = ["all", "email", "sponsorship", "social", "shopping", "calendar"];
 const STATUSES = ["all", "unread", "read", "acted_on", "dismissed"];
@@ -39,7 +41,7 @@ function categoryIcon(cat) {
   }
 }
 
-function SignalCard({ signal, onFeedback, onDismiss, isDismissed }) {
+function SignalCard({ signal, onFeedback, onDismiss, isDismissed, isNew }) {
   const [showFeedbackNote, setShowFeedbackNote] = useState(false);
   const [feedbackNote, setFeedbackNote] = useState(signal.feedback_note || "");
   const [submitting, setSubmitting] = useState(false);
@@ -62,7 +64,7 @@ function SignalCard({ signal, onFeedback, onDismiss, isDismissed }) {
   const hasDraft = !!signal.agent_draft;
 
   return (
-    <div className={`card life-signal-card card-dismissable ${dismissing ? "card-dismissing" : ""} ${isDismissed ? "card-dismissed-muted" : ""}`} data-priority={signal.priority} data-status={signal.status}>
+    <div className={`card life-signal-card card-dismissable ${dismissing ? "card-dismissing" : ""} ${isDismissed ? "card-dismissed-muted" : ""} ${isNew ? "card-new" : ""}`} data-priority={signal.priority} data-status={signal.status}>
       {!isDismissed && <button className="dismiss-btn" onClick={handleDismiss} title="Dismiss signal">{"\u2715"}</button>}
       <div className="signal-header">
         <span className="signal-icon">{categoryIcon(signal.category)}</span>
@@ -126,62 +128,53 @@ function SignalCard({ signal, onFeedback, onDismiss, isDismissed }) {
 }
 
 export default function LifeFeedPage() {
-  const [signals, setSignals] = useState([]);
-  const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState("all");
   const [status, setStatus] = useState("all");
-  const [error, setError] = useState(null);
   const [showDismissed, setShowDismissed] = useState(false);
+  const [stats, setStats] = useState(null);
+  const feedTopRef = useRef(null);
 
-  const fetchSignals = useCallback(async () => {
-    try {
-      const params = new URLSearchParams();
-      if (category !== "all") params.set("category", category);
-      if (status !== "all") params.set("status", status);
-      else if (!showDismissed) params.set("exclude_dismissed", "true");
-      params.set("limit", "50");
-
-      const res = await fetch(`/api/life-signals?${params}`, { headers: getAuthHeaders() });
-      if (!res.ok) throw new Error(`Failed to fetch signals: ${res.status}`);
-      const data = await res.json();
-      setSignals(Array.isArray(data) ? data : []);
-      setError(null);
-    } catch (err) {
-      console.error("Failed to load signals:", err);
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+  const fetchFn = useCallback(async () => {
+    const params = new URLSearchParams();
+    if (category !== "all") params.set("category", category);
+    if (status !== "all") params.set("status", status);
+    else if (!showDismissed) params.set("exclude_dismissed", "true");
+    params.set("limit", "50");
+    const res = await fetch(`/api/life-signals?${params}`, { headers: getAuthHeaders() });
+    if (!res.ok) throw new Error(`Failed to fetch signals: ${res.status}`);
+    return res.json();
   }, [category, status, showDismissed]);
 
-  const fetchStats = useCallback(async () => {
-    try {
-      const res = await fetch("/api/life-signals?stats=true", { headers: getAuthHeaders() });
-      if (res.ok) setStats(await res.json());
-    } catch {
-      // stats are non-critical
-    }
-  }, []);
+  const {
+    data: signals,
+    loading,
+    error,
+    newCount,
+    clearNew,
+    isNew,
+    lastRefreshed,
+  } = useLivePolling(fetchFn, { interval: 30000 });
 
+  // Stats polling (separate, lighter)
   useEffect(() => {
-    fetchSignals();
+    async function fetchStats() {
+      try {
+        const res = await fetch("/api/life-signals?stats=true", { headers: getAuthHeaders() });
+        if (res.ok) setStats(await res.json());
+      } catch { /* non-critical */ }
+    }
     fetchStats();
-    const interval = setInterval(() => { fetchSignals(); fetchStats(); }, 30000);
-    return () => clearInterval(interval);
-  }, [fetchSignals, fetchStats]);
+    const timer = setInterval(fetchStats, 30000);
+    return () => clearInterval(timer);
+  }, []);
 
   async function handleFeedback(id, update) {
     try {
-      const res = await fetch(`/api/life-signals/${id}`, {
+      await fetch(`/api/life-signals/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify(update),
       });
-      if (!res.ok) throw new Error("Failed to update");
-      const updated = await res.json();
-      setSignals((prev) => prev.map((s) => (s.id === id ? updated : s)));
-      fetchStats();
     } catch (err) {
       console.error("Feedback error:", err);
     }
@@ -189,22 +182,19 @@ export default function LifeFeedPage() {
 
   async function handleDismiss(id) {
     try {
-      const res = await fetch(`/api/life-signals/${id}`, {
+      await fetch(`/api/life-signals/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify({ status: "dismissed" }),
       });
-      if (!res.ok) throw new Error("Failed to dismiss");
-      if (showDismissed) {
-        const updated = await res.json();
-        setSignals((prev) => prev.map((s) => (s.id === id ? updated : s)));
-      } else {
-        setSignals((prev) => prev.filter((s) => s.id !== id));
-      }
-      fetchStats();
     } catch (err) {
       console.error("Dismiss error:", err);
     }
+  }
+
+  function scrollToNewSignals() {
+    feedTopRef.current?.scrollIntoView({ behavior: "smooth" });
+    clearNew();
   }
 
   return (
@@ -223,28 +213,32 @@ export default function LifeFeedPage() {
         )}
       </div>
 
+      <LiveHeader lastRefreshed={lastRefreshed} newCount={newCount} onClickNew={scrollToNewSignals} />
+
       <div className="life-feed-filters">
         <div className="filter-chips">
           {CATEGORIES.map((cat) => (
             <button
               key={cat}
               className={`chip ${category === cat ? "chip-active" : ""}`}
-              onClick={() => { setCategory(cat); setLoading(true); }}
+              onClick={() => setCategory(cat)}
             >
               {cat === "all" ? "All" : `${categoryIcon(cat)} ${cat.charAt(0).toUpperCase() + cat.slice(1)}`}
             </button>
           ))}
         </div>
-        <select className="select" style={{ width: "auto", minWidth: 120 }} value={status} onChange={(e) => { setStatus(e.target.value); setLoading(true); }}>
+        <select className="select" style={{ width: "auto", minWidth: 120 }} value={status} onChange={(e) => setStatus(e.target.value)}>
           {STATUSES.map((s) => (
             <option key={s} value={s}>{s === "all" ? "All statuses" : s.replace(/_/g, " ")}</option>
           ))}
         </select>
-        <button className="dismiss-toggle" onClick={() => { setShowDismissed(!showDismissed); setLoading(true); }}>
+        <button className="dismiss-toggle" onClick={() => setShowDismissed(!showDismissed)}>
           <span className={`dismiss-toggle-dot ${showDismissed ? "active" : ""}`} />
           {showDismissed ? "Showing dismissed" : "Show dismissed"}
         </button>
       </div>
+
+      <div ref={feedTopRef} />
 
       {loading ? (
         <div className="section-stack">
@@ -268,7 +262,14 @@ export default function LifeFeedPage() {
       ) : (
         <div className="section-stack">
           {signals.map((signal) => (
-            <SignalCard key={signal.id} signal={signal} onFeedback={handleFeedback} onDismiss={handleDismiss} isDismissed={signal.status === "dismissed"} />
+            <SignalCard
+              key={signal.id}
+              signal={signal}
+              onFeedback={handleFeedback}
+              onDismiss={handleDismiss}
+              isDismissed={signal.status === "dismissed"}
+              isNew={isNew(signal.id)}
+            />
           ))}
         </div>
       )}

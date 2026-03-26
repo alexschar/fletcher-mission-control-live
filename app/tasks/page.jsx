@@ -186,6 +186,14 @@ export default function TasksPage() {
         if (error?.message === "unauthorized") router.push('/login');
       })
       .finally(() => setLoading(false));
+
+    // Auto-refresh every 60 seconds
+    const interval = setInterval(() => {
+      fetchTasks()
+        .then(data => setTasks(prev => normalizeTasksResponse(data, prev)))
+        .catch(() => {});
+    }, 60000);
+    return () => clearInterval(interval);
   }, [router]);
 
   const filteredTasks = useMemo(() => {

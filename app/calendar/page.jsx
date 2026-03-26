@@ -1,6 +1,8 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { getAuthHeaders } from "../../lib/api-client";
+import { useLivePolling } from "../../lib/use-live-polling";
+import LiveHeader from "../components/LiveHeader";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -144,34 +146,32 @@ function EventCard({ signal, isConflict, onFeedback }) {
 }
 
 export default function CalendarPage() {
-  const [signals, setSignals] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const feedTopRef = useRef(null);
 
-  const fetchSignals = useCallback(async () => {
-    try {
-      const params = new URLSearchParams();
-      params.set("category", "calendar");
-      params.set("limit", "50");
-      const res = await fetch(`/api/life-signals?${params}`, { headers: getAuthHeaders() });
-      if (!res.ok) throw new Error(`Failed to fetch: ${res.status}`);
-      let data = await res.json();
-      data = Array.isArray(data) ? data : [];
-      setSignals(data);
-      setError(null);
-    } catch (err) {
-      console.error("Failed to load calendar signals:", err);
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+  const fetchFn = useCallback(async () => {
+    const params = new URLSearchParams();
+    params.set("category", "calendar");
+    params.set("limit", "50");
+    const res = await fetch(`/api/life-signals?${params}`, { headers: getAuthHeaders() });
+    if (!res.ok) throw new Error(`Failed to fetch: ${res.status}`);
+    let data = await res.json();
+    return Array.isArray(data) ? data : [];
   }, []);
 
-  useEffect(() => {
-    fetchSignals();
-    const interval = setInterval(fetchSignals, 60000);
-    return () => clearInterval(interval);
-  }, [fetchSignals]);
+  const {
+    data: signals,
+    loading,
+    error,
+    newCount,
+    clearNew,
+    isNew,
+    lastRefreshed,
+  } = useLivePolling(fetchFn, { interval: 300000 }); // 5 minutes
+
+  function scrollToNew() {
+    feedTopRef.current?.scrollIntoView({ behavior: "smooth" });
+    clearNew();
+  }
 
   // Sort by start_time
   const sorted = [...signals].sort((a, b) => {
@@ -218,6 +218,9 @@ export default function CalendarPage() {
           {conflictPairs.length > 0 && <span className="stat-pill stat-pill-red">{conflictPairs.length} conflicts</span>}
         </div>
       </div>
+
+      <LiveHeader lastRefreshed={lastRefreshed} newCount={newCount} onClickNew={scrollToNew} />
+      <div ref={feedTopRef} />
 
       {loading ? (
         <div className="section-stack">
