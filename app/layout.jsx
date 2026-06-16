@@ -24,6 +24,11 @@ export default function RootLayout({ children }) {
                     <Sidebar />
                     <main className="main">
                       {children}
+                      <footer className="app-footer">
+                        <a href="https://github.com/alexschar/fletcher-mission-control-live" target="_blank" rel="noopener noreferrer">
+                          GitHub
+                        </a>
+                      </footer>
                     </main>
                   </div>
                 </AuthGate>
