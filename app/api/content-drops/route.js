@@ -4,6 +4,10 @@ const {
   createContentDrop,
   getContentDrops,
 } = require('../../../lib/supabase');
+const {
+  extractYouTubeContent,
+  isYouTubeUrl,
+} = require('../../../lib/youtube-content');
 
 const ALLOWED_PLATFORMS = ['youtube', 'tiktok', 'instagram', 'twitter', 'web', 'other'];
 const ALLOWED_CONTENT_TYPES = ['transcript', 'caption', 'article', 'post', 'other'];
@@ -80,6 +84,8 @@ export async function POST(request) {
 
   try {
     const body = await request.json();
+    const trimmedRawContent = typeof body.raw_content === 'string' ? body.raw_content.trim() : '';
+    const shouldAutoExtract = body.platform === 'youtube' && isYouTubeUrl(body.source_url) && !trimmedRawContent;
 
     if (!body.source_url || !isValidUrl(body.source_url)) {
       return NextResponse.json({ error: 'source_url is required and must be a valid URL' }, { status: 400 });
@@ -93,7 +99,7 @@ export async function POST(request) {
       return NextResponse.json({ error: `content_type is required and must be one of: ${ALLOWED_CONTENT_TYPES.join(', ')}` }, { status: 400 });
     }
 
-    if (typeof body.raw_content !== 'string' || !body.raw_content.trim()) {
+    if (!trimmedRawContent && !shouldAutoExtract) {
       return NextResponse.json({ error: 'raw_content is required and must be a non-empty string' }, { status: 400 });
     }
 
@@ -105,13 +111,15 @@ export async function POST(request) {
       return NextResponse.json({ error: 'relevant_agents must be an array' }, { status: 400 });
     }
 
+    const extracted = shouldAutoExtract ? await extractYouTubeContent(body.source_url) : null;
+
     const record = await createContentDrop({
       source_url: body.source_url,
       platform: body.platform,
       content_type: body.content_type,
-      title: body.title?.trim() || null,
-      raw_content: body.raw_content.trim(),
-      summary: typeof body.summary === 'string' ? body.summary.trim() || null : null,
+      title: body.title?.trim() || extracted?.title || null,
+      raw_content: trimmedRawContent || extracted?.rawContent || '',
+      summary: typeof body.summary === 'string' ? body.summary.trim() || extracted?.summary || null : extracted?.summary || null,
       topics: body.topics || [],
       relevant_agents: body.relevant_agents || [],
     });
