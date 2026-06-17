@@ -50,7 +50,13 @@ export async function GET(request) {
       filters.category = category;
     }
 
-    if (source) filters.source = source;
+    if (source) {
+      filters.source = source;
+      // Support prefix matching for source (e.g., source=instagram&source_prefix=true matches instagram_*)
+      if (searchParams.get('source_prefix') === 'true') {
+        filters.source_prefix = true;
+      }
+    }
     if (priority) filters.priority = priority;
     if (limit) filters.limit = limit;
     if (hasFeedback) filters.has_feedback = hasFeedback;

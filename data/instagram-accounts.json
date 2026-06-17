@@ -1,0 +1,24 @@
+{
+  "accounts": [
+    {
+      "accountId": "alexcandothat",
+      "username": "alexcandothat",
+      "source": "instagram_alexcandothat",
+      "category": "social",
+      "description": "Main Instagram account - primary content and audience",
+      "enabled": true,
+      "isPrimary": true
+    },
+    {
+      "accountId": "alexschar.dev",
+      "username": "alexschar.dev",
+      "source": "instagram_alexschar.dev",
+      "category": "social",
+      "description": "Tech-focused Instagram account - developer content",
+      "enabled": true,
+      "isPrimary": false
+    }
+  ],
+  "version": "1.0",
+  "updatedAt": "2026-06-17T21:45:00Z"
+}
