@@ -3,6 +3,8 @@
  * Astrology Signals - Daily Transit Fetcher
  * Runs at 5:30 AM daily via cron
  * Fetches transit data from FreeAstroAPI and stores as life_signal
+ * 
+ * Cron: 30 5 * * * /usr/local/bin/node ~/scripts/astrology-signals.js
  */
 
 const fs = require('fs');
@@ -43,24 +45,42 @@ function loadNatalChart() {
   }
 }
 
+function parseBirthDate(birthDate) {
+  const [year, month, day] = birthDate.split('-').map(Number);
+  return { year, month, day };
+}
+
+function parseBirthTime(birthTime) {
+  const [hour, minute] = birthTime.split(':').map(Number);
+  return { hour, minute };
+}
+
 async function fetchTransits(natalChart) {
-  const today = new Date().toISOString().split('T')[0];
+  const { year, month, day } = parseBirthDate(natalChart.birth_date);
+  const { hour, minute } = parseBirthTime(natalChart.birth_time);
   
+  // Build payload per FreeAstroAPI schema
   const payload = {
-    birth_date: natalChart.birth_date,
-    birth_time: natalChart.birth_time,
-    birth_time_known: natalChart.birth_time_known,
-    latitude: natalChart.latitude,
-    longitude: natalChart.longitude,
-    timezone: natalChart.timezone,
-    house_system: natalChart.house_system,
-    transit_date: today,
-    planets: natalChart.planets,
-    angles: natalChart.angles,
-    houses: natalChart.houses
+    natal: {
+      name: natalChart.name || 'Alex',
+      year: year,
+      month: month,
+      day: day,
+      time_known: natalChart.birth_time_known !== false,
+      hour: hour,
+      minute: minute,
+      lat: natalChart.latitude,
+      lng: natalChart.longitude
+    },
+    current_city: natalChart.birth_place || 'Waco, Texas, USA',
+    current_lat: natalChart.latitude,
+    current_lng: natalChart.longitude,
+    transit_date: new Date().toISOString().slice(0, 16), // YYYY-MM-DDTHH:MM
+    tz_str: natalChart.timezone || 'America/Chicago'
   };
 
   log('Fetching transits from FreeAstroAPI...');
+  log(`Payload: ${JSON.stringify(payload, null, 2)}`);
   
   try {
     const response = await fetch(FREEASTRO_API_URL, {
@@ -72,13 +92,22 @@ async function fetchTransits(natalChart) {
       body: JSON.stringify(payload)
     });
 
+    const responseData = await response.text();
+    
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`API error ${response.status}: ${errorText}`);
+      log(`API error response: ${responseData}`);
+      throw new Error(`API error ${response.status}: ${response.statusText}`);
     }
 
-    const data = await response.json();
-    log(`Successfully fetched ${data.transits?.length || 0} transits`);
+    const data = JSON.parse(responseData);
+    
+    // Count transits from response
+    const transitCount = data.transits?.length || 
+                        data.aspects?.length || 
+                        data.transit_planets?.length || 
+                        0;
+    
+    log(`Successfully fetched ${transitCount} transits`);
     return data;
   } catch (error) {
     log(`ERROR: Failed to fetch transits: ${error.message}`);
@@ -89,24 +118,57 @@ async function fetchTransits(natalChart) {
 async function storeTransitSignal(transitData) {
   const today = new Date().toISOString().split('T')[0];
   
+  // Extract transits/aspects from various possible response formats
+  const transits = transitData.transits || 
+                   transitData.aspects || 
+                   [];
+  
+  const transitPlanets = transitData.transit_planets || 
+                         transitData.current_planets || 
+                         {};
+  
+  const natalPlanets = transitData.natal_planets || 
+                       {};
+  
+  // Build a summary of key aspects
+  const aspectSummary = transits.slice(0, 5).map(t => {
+    // Handle FreeAstroAPI response format: p1, p2, type, orb
+    const p1 = t.p1 || t.transiting_planet || t.planet1 || t.transit_planet || 'Unknown';
+    const p2 = t.p2 || t.natal_planet || t.planet2 || 'Unknown';
+    const aspect = t.type || t.aspect_type || t.aspect || 'aspect';
+    const orb = t.orb || t.orb_degrees || 0;
+    // Clean up planet names (remove (N) and (T) suffixes for readability)
+    const cleanP1 = p1.replace(/\s*\(T\)$/, '').replace(/\s*\(N\)$/, '');
+    const cleanP2 = p2.replace(/\s*\(T\)$/, '').replace(/\s*\(N\)$/, '');
+    // Determine which is transit vs natal based on suffix or position
+    const transitingPlanet = p1.includes('(T)') ? cleanP1 : p2.includes('(T)') ? cleanP2 : cleanP1;
+    const natalPlanet = p1.includes('(N)') ? cleanP1 : p2.includes('(N)') ? cleanP2 : cleanP2;
+    return `${transitingPlanet} ${aspect} ${natalPlanet} (orb ${parseFloat(orb).toFixed(1)}°)`;
+  }).join('; ');
+  
   const signal = {
-    source: 'astrology_pipeline',
+    source: 'astrology',
     category: 'system',
     signal_type: 'astrology_transit',
     title: `Daily Transits - ${today}`,
-    body: `Raw transit data for ${today}. ${transitData.transits?.length || 0} active transits detected.`,
+    body: aspectSummary || `Transit data for ${today}. ${transits.length} aspects calculated.`,
     metadata: {
       transit_date: today,
-      transits: transitData.transits || [],
-      planetary_positions: transitData.planetary_positions || {},
+      transits: transits,
+      transit_planets: transitPlanets,
+      natal_planets: natalPlanets,
+      planetary_positions: transitData.planetary_positions || transitPlanets,
+      houses: transitData.houses || {},
+      angles: transitData.angles || {},
       interpretation_ready: false,
-      natal_chart_hash: require('crypto').createHash('md5').update(JSON.stringify(transitData)).digest('hex').slice(0, 8)
+      api_response_hash: require('crypto').createHash('md5').update(JSON.stringify(transitData)).digest('hex').slice(0, 8)
     },
     priority: 'normal',
     status: 'unread'
   };
 
   log('Storing transit signal to Mission Control...');
+  log(`Signal body: ${signal.body}`);
 
   try {
     const response = await fetch(`${MISSION_CONTROL_URL}/api/life-signals`, {
@@ -118,12 +180,14 @@ async function storeTransitSignal(transitData) {
       body: JSON.stringify(signal)
     });
 
+    const responseText = await response.text();
+    
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`API error ${response.status}: ${errorText}`);
+      log(`Store error response: ${responseText}`);
+      throw new Error(`API error ${response.status}: ${response.statusText}`);
     }
 
-    const result = await response.json();
+    const result = JSON.parse(responseText);
     log(`Successfully stored transit signal with ID: ${result.id}`);
     return result;
   } catch (error) {
@@ -142,11 +206,13 @@ async function main() {
 
   const natalChart = loadNatalChart();
   log(`Loaded natal chart for ${natalChart.name} (${natalChart.birth_date})`);
+  log(`Birth: ${natalChart.birth_place} (${natalChart.latitude}, ${natalChart.longitude})`);
 
   try {
     const transitData = await fetchTransits(natalChart);
     const signal = await storeTransitSignal(transitData);
     log('=== Pipeline completed successfully ===');
+    log(`Signal ID: ${signal.id}`);
     process.exit(0);
   } catch (error) {
     log(`=== Pipeline failed: ${error.message} ===`);
