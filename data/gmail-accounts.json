@@ -1,0 +1,51 @@
+{
+  "accounts": [
+    {
+      "accountId": "scharalex",
+      "email": "scharalex@gmail.com",
+      "source": "gmail_scharalex",
+      "categories": ["email", "sponsorship"],
+      "priorityDomains": [
+        "github.com",
+        "vercel.com",
+        "supabase.com",
+        "openai.com",
+        "stripe.com",
+        "linear.app"
+      ],
+      "enabled": true
+    },
+    {
+      "accountId": "alexschar12",
+      "email": "alexschar12@gmail.com",
+      "source": "gmail_alexschar12",
+      "categories": ["email", "sponsorship"],
+      "priorityDomains": [
+        "emergingarts.com",
+        "emergingarts.org",
+        "thedinah.com",
+        "eventbrite.com",
+        "bandsintown.com",
+        "songkick.com",
+        "ticketmaster.com",
+        "seetickets.us",
+        "dice.fm"
+      ],
+      "prioritySenders": [
+        "emergingarts",
+        "thedinah",
+        "booking",
+        "gigs",
+        "live",
+        "performance",
+        "festival",
+        "venue",
+        "promoter"
+      ],
+      "description": "Live performance opportunities - Emerging Arts, The Dinah, and other gig bookings",
+      "enabled": true
+    }
+  ],
+  "version": "1.0",
+  "updatedAt": "2026-06-17T21:35:00Z"
+}
