@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server';
-import { withAuth } from '../../../lib/auth';
+import { authMiddleware } from '../../../lib/auth';
 
-const { createInteractMessage } = require('../../../lib/supabase');
+const {
+  createInteractMessage,
+  getInteractMessages,
+  markInteractMessageProcessed,
+} = require('../../../lib/supabase');
 
 const TELEGRAM_API_BASE = process.env.TELEGRAM_API_BASE || 'https://api.telegram.org';
 
@@ -11,7 +15,7 @@ const TARGETS = {
     botChatId: process.env.FLETCHER_BOT_CHAT_ID || '@fletcheragentbot',
   },
   sawyer: {
-    label: 'Sawyer', 
+    label: 'Sawyer',
     botChatId: process.env.SAWYER_BOT_CHAT_ID || '@sawyeragentbot',
   },
 };
@@ -24,13 +28,6 @@ function readEnv(keys = []) {
     }
   }
   return null;
-}
-
-function escapeHtml(value) {
-  return String(value)
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;');
 }
 
 function formatElementContext(selected = {}) {
@@ -51,16 +48,12 @@ async function sendTelegramMessage(targetConfig, text) {
   const botToken = readEnv(['ALEX_TELEGRAM_USER_TOKEN', 'TELEGRAM_BOT_TOKEN']);
   const botChatId = targetConfig.botChatId;
 
-  if (!botToken) {
-    throw new Error('Telegram bot token not configured');
-  }
-
-  if (!botChatId) {
-    throw new Error(`Bot chat ID not configured for ${targetConfig.label}`);
+  if (!botToken || !botChatId) {
+    return { status: 'skipped', messageId: null };
   }
 
   const response = await fetch(`${TELEGRAM_API_BASE}/bot${botToken}/sendMessage`, {
-    method: 'POST', 
+    method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
@@ -78,46 +71,88 @@ async function sendTelegramMessage(targetConfig, text) {
   }
 
   if (!response.ok || !payload?.ok) {
-    const telegramDescription = payload?.description || `Telegram API HTTP ${response.status}`;
-    throw new Error(`Telegram send failed: ${telegramDescription}`);
+    const description = payload?.description || `Telegram API HTTP ${response.status}`;
+    throw new Error(`Telegram send failed: ${description}`);
   }
 
-  return payload;
+  return {
+    status: payload?.result?.message_id ? 'sent' : 'attempted',
+    messageId: payload?.result?.message_id || null,
+  };
 }
 
-async function handler(request) {
+export async function GET(request) {
+  const authError = authMiddleware(request);
+  if (authError) return authError;
+
+  try {
+    const { searchParams } = new URL(request.url);
+    const status = searchParams.get('status') || 'pending';
+    const agentTarget = searchParams.get('agent_target') || undefined;
+    const limitParam = searchParams.get('limit');
+    const parsedLimit = limitParam ? Number.parseInt(limitParam, 10) : undefined;
+
+    const messages = await getInteractMessages({
+      status,
+      agent_target: agentTarget,
+      limit: Number.isFinite(parsedLimit) && parsedLimit > 0 ? parsedLimit : undefined,
+    });
+
+    return NextResponse.json(messages);
+  } catch (error) {
+    return NextResponse.json({ error: error.message || 'Failed to read interact messages' }, { status: 500 });
+  }
+}
+
+export async function POST(request) {
+  const authError = authMiddleware(request);
+  if (authError) return authError;
+
   try {
     const body = await request.json();
+
+    if (body.action === 'mark_processed') {
+      if (!body.id) {
+        return NextResponse.json({ error: 'Message id is required' }, { status: 400 });
+      }
+
+      const updated = await markInteractMessageProcessed(body.id);
+      if (!updated) {
+        return NextResponse.json({ error: 'Interact message not found' }, { status: 404 });
+      }
+
+      return NextResponse.json(updated);
+    }
+
     const targetAgent = String(body.targetAgent || '').toLowerCase();
     const config = TARGETS[targetAgent];
-
     if (!config) {
       return NextResponse.json({ error: 'Invalid target agent' }, { status: 400 });
     }
 
-    const selected = body.selected || {};
     const question = String(body.question || '').trim();
     if (!question) {
       return NextResponse.json({ error: 'Question is required' }, { status: 400 });
     }
 
+    const selected = body.selected || {};
     const elementContext = formatElementContext(selected);
     const message = formatInteractMessage(elementContext, question);
     const queued = await createInteractMessage({
       agent_target: targetAgent,
       element_context: elementContext,
       user_message: question,
-      status: 'pending'
+      status: 'pending',
     });
 
-    let telegramMessageId = null;
     let telegramStatus = 'skipped';
+    let telegramMessageId = null;
     let telegramError = null;
 
     try {
       const telegram = await sendTelegramMessage(config, message);
-      telegramMessageId = telegram?.result?.message_id || null;
-      telegramStatus = telegramMessageId ? 'sent' : 'attempted';
+      telegramStatus = telegram.status;
+      telegramMessageId = telegram.messageId;
     } catch (error) {
       telegramStatus = 'failed';
       telegramError = error?.message || 'Telegram send failed';
@@ -136,10 +171,8 @@ async function handler(request) {
       telegramError,
       queueMessageId: queued?.id || null,
       queueStatus: queued?.status || null,
-    });
+    }, { status: 201 });
   } catch (error) {
     return NextResponse.json({ error: error.message || 'Failed to send interact message' }, { status: 500 });
   }
 }
-
-export const POST = withAuth(handler);
