@@ -19,8 +19,8 @@ export default function AstrologyPage() {
     try {
       setLoading(true);
       
-      // Fetch today's transit and interpretation signals
-      const response = await fetch(`${API_BASE}/api/life-signals?source=astrology_pipeline&limit=10`);
+      // Fetch today's transit signals
+      const response = await fetch(`${API_BASE}/api/life-signals?source=astrology&limit=10`);
       
       if (!response.ok) {
         throw new Error(`Failed to fetch: ${response.status}`);
@@ -36,13 +36,7 @@ export default function AstrologyPage() {
         s.metadata?.transit_date === today
       );
       
-      const interp = signals.find(s => 
-        s.signal_type === 'astrology_interpretation' &&
-        s.metadata?.transit_date === today
-      );
-      
       setTodayData(transit || null);
-      setInterpretation(interp || null);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -210,59 +204,36 @@ export default function AstrologyPage() {
               </div>
             )}
 
-            {/* Interpretation Card */}
-            {interpretation ? (
+            {/* Transit Details Card */}
+            {todayData?.metadata?.transits && (
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900">📖 Daily Interpretation</h3>
-                  {interpretation.metadata?.confidence_breakdown && (
-                    <div className="flex gap-2 text-xs">
-                      {Object.entries(interpretation.metadata.confidence_breakdown).map(([label, count]) => 
-                        count > 0 ? (
-                          <span key={label} className="text-gray-500">
-                            {label}: {count}
-                          </span>
-                        ) : null
-                      )}
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">📊 Transit Details</h3>
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {todayData.metadata.transits.slice(0, 20).map((t, i) => (
+                    <div key={i} className="flex items-center justify-between py-1 text-sm border-b border-gray-50 last:border-0">
+                      <span className="text-gray-700">
+                        {t.p1?.replace(' (T)', '')} <span className="text-gray-400">→</span> {t.p2?.replace(' (N)', '')}
+                      </span>
+                      <span className="text-gray-500">
+                        {t.type} ({t.orb?.toFixed(1)}°)
+                      </span>
                     </div>
+                  ))}
+                  {todayData.metadata.transits.length > 20 && (
+                    <p className="text-sm text-gray-500 text-center pt-2">
+                      +{todayData.metadata.transits.length - 20} more aspects
+                    </p>
                   )}
                 </div>
-                
-                <div className="prose prose-gray max-w-none">
-                  <div className="whitespace-pre-wrap text-gray-700 leading-relaxed">
-                    {renderInterpretationContent(interpretation.metadata?.interpretation_full || interpretation.body)}
-                  </div>
-                </div>
-                
-                <div className="mt-6 pt-4 border-t border-gray-100">
-                  <h4 className="text-sm font-medium text-gray-700 mb-2">Confidence Labels:</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {renderConfidenceBadge('FACT')}
-                    <span className="text-sm text-gray-600">Astronomically verifiable</span>
-                    {renderConfidenceBadge('ANALYSIS')}
-                    <span className="text-sm text-gray-600">Pattern recognition</span>
-                    {renderConfidenceBadge('INTERPRETATION')}
-                    <span className="text-sm text-gray-600">Synthesized meaning</span>
-                    {renderConfidenceBadge('EXPLORATORY')}
-                    <span className="text-sm text-gray-600">Speculative insights</span>
-                  </div>
-                </div>
               </div>
-            ) : todayData ? (
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-amber-900 mb-2">⏳ Interpretation Pending</h3>
-                <p className="text-amber-800">
-                  Transit data has been recorded. The interpretation will be generated at 6:00 AM.
-                </p>
-              </div>
-            ) : null}
+            )}
           </div>
         )}
 
         {/* Footer */}
         <div className="mt-8 text-center text-sm text-gray-500">
           <p>Based on natal chart: Waco, TX • Feb 12, 1998 • 11:00 PM CST</p>
-          <p className="mt-1">Data source: FreeAstroAPI • Interpretation: Claude (Anthropic)</p>
+          <p className="mt-1">Data source: FreeAstroAPI</p>
         </div>
       </div>
     </div>

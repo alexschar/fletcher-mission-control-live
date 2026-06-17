@@ -22,7 +22,7 @@ export async function GET(request) {
     // Fetch astrology-related life signals
     const filters = {
       since: cutoff,
-      source: 'astrology_pipeline',
+      source: 'astrology',
       limit: 100
     };
     
