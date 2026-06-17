@@ -71,6 +71,13 @@ export async function GET(request) {
     }
 
     const signals = await getLifeSignals(filters);
+    // Add debug info to response when source_prefix is used
+    if (filters.source_prefix) {
+      return NextResponse.json({
+        _debug: { filters },
+        signals
+      });
+    }
     return NextResponse.json(signals);
   } catch (error) {
     console.error('[life-signals GET]', error);
