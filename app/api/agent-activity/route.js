@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server';
 const { authMiddleware } = require('../../../lib/auth');
 
 const ALLOWED_ACTION_TYPES = ['create', 'update', 'delete', 'execute', 'analyze', 'verify', 'deploy', 'other'];
-const ALLOWED_ACTION_STATUSES = ['pending', 'in_progress', 'completed', 'failed'];
-const ALLOWED_LEARNING_CATEGORIES = ['technical', 'process', 'preference', 'error', 'pattern', 'other'];
+const ALLOWED_ACTION_STATUSES = ['pending', 'completed', 'failed'];
+const ALLOWED_LEARNING_CATEGORIES = ['technical', 'process', 'preference', 'error', 'pattern'];
 
 // Dynamic imports to avoid issues during static generation
 async function getDb() {
@@ -90,10 +90,10 @@ export async function POST(request) {
     const db = await getDb();
 
     if (resource === 'learning') {
-      // Validate required fields
-      if (!body.agent || !body.category || !body.title || !body.content) {
+      // Validate required fields (title maps to content in DB schema)
+      if (!body.agent || !body.category || !body.content) {
         return NextResponse.json(
-          { error: 'Missing required fields: agent, category, title, content' },
+          { error: 'Missing required fields: agent, category, content' },
           { status: 400 }
         );
       }
